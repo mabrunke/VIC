@@ -304,5 +304,10 @@ void write_vegvar(veg_var_struct *, int);
 void zero_output_list(out_data_struct *);
 
 int VICCNInterface(int, int, int, dmy_struct *, global_param_struct *, atmos_data_struct *, all_vars_struct *, soil_con_struct *, veg_con_struct *, veg_lib_struct *, cn_data_struct *);
+void get_CNatmos(double, atmos_data_struct *, cn_data_struct *);
+void get_CNsoil(int, int, int, soil_con_struct *, all_vars_struct *, cn_data_struct *);
+void get_CNsoilhydro(int, int, int, int, int, soil_con_struct *, veg_con_struct *, all_vars_struct *, cn_data_struct *);
+void get_CNsoiltherm(int, int, int, all_vars_struct *, cn_data_struct *);
+void get_CNveg(int, int, double, veg_con_struct *, veg_lib_struct *, all_vars_struct *, cn_data_struct *);
 
 #endif

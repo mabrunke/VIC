@@ -176,6 +176,8 @@
 #define MAX_FROST_AREAS 10     /* maximum number of frost sub-areas */
 #define MAX_LAKE_NODES 20      /* maximum number of lake thermal nodes */
 #define MAX_ZWTVMOIST  11      /* maximum number of points in water table vs moisture curve for each soil layer; should include points at lower and upper boundaries of the layer */
+#define MAX_CN_PFTS    21      /* maximumn number of CN plant functional types */
+#define NRADBANDS      2       /* number of CN radiation bands */
 
 /***** Number of iterations to use in solving the surface energy balance.
        The original VIC model uses only 1 iteration for speed.  Increasing
@@ -1444,99 +1446,140 @@ typedef struct {
   added by MAB, 7/23/14
 ******************************************************************/
  typedef struct {
+   /* atmospheric quantities */
+   double Tair;                               /* air temperature */
+   double vp;                                 /* vapor pressure */
+   double vpd;                                /* vapor pressure depression */
+   double psfc;                               /* surface pressure */
+   double lwrad;                              /* longwave radiation */
+   double swrad;                              /* shortwave radiation */
+   double precip;                             /* precipitation */
+   double swrd[NRADBANDS];                    /* direct shortwave radiation */
+   double swri[NRADBANDS];                    /* diffuse shortwave radiation */
+   double alb;                                /* albedo */
+   double t2m[MAX_CN_PFTS];                   /* 2-m air temperature */
+   double t_soisno[MAX_NODES+2];              /* soil/snow temperature */
+   /* Soil properties */
+   double z[MAX_NODES+2];                     /* Node depth */
+   double dz[MAX_NODES+2];                    /* Node thickness */
+   double z0;                                 /* Surface roughness */
+   double z0s;                                /* Snow roughness */
+   /* Vegetation characteristics */
+   double Tveg[MAX_CN_PFTS];                  /* vegetation temperature */
+   double rveg[MAX_CN_PFTS];                  /* vegetation resistance */
+   double zov[MAX_CN_PFTS];                   /* vegetation roughness */
+   double displ[MAX_CN_PFTS];                 /* displacement height */
+   double fwet[MAX_CN_PFTS];                  /* wet veg fraction */
+   /* Soil hydrology */
+   double baseflow;                           /* baseflow */
+   double moist[MAX_NODES];                   /* soil moisture */
+   double ice[MAX_NODES+2];                     /* soil ice */
+   double rootfr[MAX_CN_PFTS][MAX_NODES];     /* root fraction */
+   double bsw[MAX_NODES][2];                  /* Clapp-Hornberger coefficient */
+   double sucsat[MAX_NODES][2];               /* saturated suction */
+   double soisuc[MAX_NODES][2];               /* soil matrix potential */
+   double snowdep;                            /* snow depth */
    /* PFT-level ecophysiological variables */
-   double LAI[21];                   /* leaf area index */
-   double dormant_flag[21];          /* dormancy flag */
-   double days_active[21];           /* # days since last dormancy */
-   double onset_flag[21];            /* onset flag */
-   double onset_counter[21];         /* onset days counter */
-   double onset_gddflag[21];         /* onset flag for growing deg day sum */
-   double onset_fdd[21];             /* onset freezing deg day counter */
-   double onset_gdd[21];             /* onset growing degree days */
-   double onset_swi[21];             /* onset soil water index */
-   double offset_flag[21];            /* offset flag */
-   double offset_counter[21];         /* offset days counter */
-   double offset_fdd[21];             /* offset freezing deg day counter */
-   double offset_swi[21];             /* offset soil water index */
-   double lgsf[21];                  /* long growing season factor */
-   double bglfr[21];                 /* background litterfall rate (1/s) */
-   double bgtr[21];                  /* background transfer growth rate (1/s) */
-   double dayl[21];                  /* daylength (s) */
-   double prev_dayl[21];             /* daylength at previous timestep (s) */
-   double annavg_t2m[21];            /* annual average 2-m air temperature (K) */
-   double tempavg_t2m[21];           /* temporary average 2-m air temperature (K) */
-   double gpp2[21];                   /* GPP flux before downregulation (g C/m^2/s) */
-   double availc[21];                /* C flux available for allocation (g C/m^2/s) */
-   double xsmrpool_recover[21];      /* C flux assigned to recovery (g C/m^2/s) */
-   double alloc_pnow[21];            /* fraction of current allocation as new growth */
-   double c_allometry[21];           /* C allocation index */
-   double n_allometry[21];           /* N allocation index */
-   double plant_ndemand[21];         /* N flux required to support GPP (g N/m^2/s) */
-   double tempsum_potential_gpp[21]; /* temporary annual sum of potential GPP */
-   double annsum_potential_gpp[21];  /* annuals sum of potential GPP */
-   double tempmax_retransn[21];      /* temporary annual max of retrans N pool (g N/m^2) */
-   double annmax_retransn[21];       /* annual max of retransloc N pool (g N/m^2) */
-   double avail_retransn[21];        /* N flux avail for retransloc (g N/m^2/s) */
-   double plant_nalloc[21];          /* total allocated N flux (g N/m^2/s) */
-   double plant_calloc[21];          /* total allocated C flux (g C/m^2/s) */
-   double excess_cflux[21];          /* C flux not allocated (g C/m^2/s) */
-   double downreg[21];               /* fract reduction in GPP due to N limit */
-   double prev_leafc_to_litter[21];  /* previous leaf C litterfall (g C/m^2/s) */
-   double prev_frootc_to_litter[21]; /* previous froot C litterfall (g C/m^2/s) */
-   double tempsum_npp[21];           /* temporary annual sum of NPP (g C/m^2/yr) */
-   double annsum_npp[21];            /* annual sum of NPP (g C/m^2/yr) */
-   double gpp[21];                   /* gross primary production (g C/m^2/s) */
-   double npp[21];                   /* net primary production (g C/m^2/s) */
-   double ar[21];                    /* autotrophic respiration (g C/m^2/s) */
+   double LAI[MAX_CN_PFTS];                   /* leaf area index */
+   double dormant_flag[MAX_CN_PFTS];          /* dormancy flag */
+   double days_active[MAX_CN_PFTS];           /* # days since last dormancy */
+   double onset_flag[MAX_CN_PFTS];            /* onset flag */
+   double onset_counter[MAX_CN_PFTS];         /* onset days counter */
+   double onset_gddflag[MAX_CN_PFTS];         /* onset flag for growing deg day sum */
+   double onset_fdd[MAX_CN_PFTS];             /* onset freezing deg day counter */
+   double onset_gdd[MAX_CN_PFTS];             /* onset growing degree days */
+   double onset_swi[MAX_CN_PFTS];             /* onset soil water index */
+   double offset_flag[MAX_CN_PFTS];            /* offset flag */
+   double offset_counter[MAX_CN_PFTS];         /* offset days counter */
+   double offset_fdd[MAX_CN_PFTS];             /* offset freezing deg day counter */
+   double offset_swi[MAX_CN_PFTS];             /* offset soil water index */
+   double lgsf[MAX_CN_PFTS];                  /* long growing season factor */
+   double bglfr[MAX_CN_PFTS];                 /* background litterfall rate (1/s) */
+   double bgtr[MAX_CN_PFTS];                  /* background transfer growth rate (1/s) */
+   double dayl[MAX_CN_PFTS];                  /* daylength (s) */
+   double prev_dayl[MAX_CN_PFTS];             /* daylength at previous timestep (s) */
+   double annavg_t2m[MAX_CN_PFTS];            /* annual average 2-m air temperature (K) */
+   double tempavg_t2m[MAX_CN_PFTS];           /* temporary average 2-m air temperature (K) */
+   double gpp2[MAX_CN_PFTS];                   /* GPP flux before downregulation (g C/m^2/s) */
+   double availc[MAX_CN_PFTS];                /* C flux available for allocation (g C/m^2/s) */
+   double xsmrpool_recover[MAX_CN_PFTS];      /* C flux assigned to recovery (g C/m^2/s) */
+   double alloc_pnow[MAX_CN_PFTS];            /* fraction of current allocation as new growth */
+   double c_allometry[MAX_CN_PFTS];           /* C allocation index */
+   double n_allometry[MAX_CN_PFTS];           /* N allocation index */
+   double plant_ndemand[MAX_CN_PFTS];         /* N flux required to support GPP (g N/m^2/s) */
+   double tempsum_potential_gpp[MAX_CN_PFTS]; /* temporary annual sum of potential GPP */
+   double annsum_potential_gpp[MAX_CN_PFTS];  /* annuals sum of potential GPP */
+   double tempmax_retransn[MAX_CN_PFTS];      /* temporary annual max of retrans N pool (g N/m^2) */
+   double annmax_retransn[MAX_CN_PFTS];       /* annual max of retransloc N pool (g N/m^2) */
+   double avail_retransn[MAX_CN_PFTS];        /* N flux avail for retransloc (g N/m^2/s) */
+   double plant_nalloc[MAX_CN_PFTS];          /* total allocated N flux (g N/m^2/s) */
+   double plant_calloc[MAX_CN_PFTS];          /* total allocated C flux (g C/m^2/s) */
+   double excess_cflux[MAX_CN_PFTS];          /* C flux not allocated (g C/m^2/s) */
+   double downreg[MAX_CN_PFTS];               /* fract reduction in GPP due to N limit */
+   double prev_leafc_to_litter[MAX_CN_PFTS];  /* previous leaf C litterfall (g C/m^2/s) */
+   double prev_frootc_to_litter[MAX_CN_PFTS]; /* previous froot C litterfall (g C/m^2/s) */
+   double tempsum_npp[MAX_CN_PFTS];           /* temporary annual sum of NPP (g C/m^2/yr) */
+   double annsum_npp[MAX_CN_PFTS];            /* annual sum of NPP (g C/m^2/yr) */
+   double gpp[MAX_CN_PFTS];                   /* gross primary production (g C/m^2/s) */
+   double npp[MAX_CN_PFTS];                   /* net primary production (g C/m^2/s) */
+   double ar[MAX_CN_PFTS];                    /* autotrophic respiration (g C/m^2/s) */
+   double gr[MAX_CN_PFTS];                    /* growth respiration (g C/m^2/s) */
+   double mr[MAX_CN_PFTS];                    /* maintenance respiration (g C/m^2/s) */
+   double leaf_mr[MAX_CN_PFTS];               /* leaf maintenance respiration (g C/m^2/s) */
+   double litfall[MAX_CN_PFTS];               /* litterfall (g C/m^2/s) */
+   double rs[MAX_CN_PFTS];                    /* stomatal resistance */
+   double par[MAX_CN_PFTS];                   /* absorbed PAR */
    /* PFT-level carbon state */
-   double leafc[21];                 /* leaf C (g C/m^2) */
-   double leafc_storage[21];         /* leaf C storage (g C/m^2) */
-   double leafc_xfer[21];            /* leaf C transfer (g C/m^2) */
-   double frootc[21];                /* fine root C (g C/m^2) */
-   double frootc_storage[21];        /* fine root C storage (g C/m^2) */
-   double frootc_xfer[21];           /* fine root C transfer (g C/m^2) */
-   double livestemc[21];             /* live stem C (g C/m^2) */
-   double livestemc_storage[21];     /* live stem C storage (g C/m^2) */
-   double livestemc_xfer[21];        /* live stem C transfer (g C/m^2) */
-   double deadstemc[21];             /* dead stem C (g C/m^2) */
-   double deadstemc_storage[21];     /* dead stem C storage (g C/m^2) */
-   double deadstemc_xfer[21];        /* dead stem C transfer (g C/m^2) */
-   double livecrootc[21];            /* live coarse root C (g C/m^2) */
-   double livecrootc_storage[21];    /* live coarse root C storage (g C/m^2) */
-   double livecrootc_xfer[21];       /* live coarse root C transfer (g C/m^2) */
-   double deadcrootc[21];            /* dead coarse root C (g C/m^2) */
-   double deadcrootc_storage[21];    /* dead coarse root C storage (g C/m^2) */
-   double deadcrootc_xfer[21];       /* dead coarse root C transfer (g C/m^2) */
-   double gresp_storage[21];         /* growth respiration storage (g C/m^2) */
-   double gresp_xfer[21];            /* growth respiration transfer (g C/m^2) */
-   double cpool[21];                 /* temporary photosynthate C pool (g C/m^2) */
-   double xsmrpool[21];              /* abstract C pool to meet excess MR demand (g C/m^2) */
-   double pft_ctrunc[21];            /* PFT-level sink for C truncation (g C/m^2) */
-   double totvegc[21];               /* total vegetation C (g C/m^2) */
-   double woodc[21];                 /* wood C (g C/m^2) */
+   double leafc[MAX_CN_PFTS];                 /* leaf C (g C/m^2) */
+   double leafc_storage[MAX_CN_PFTS];         /* leaf C storage (g C/m^2) */
+   double leafc_xfer[MAX_CN_PFTS];            /* leaf C transfer (g C/m^2) */
+   double frootc[MAX_CN_PFTS];                /* fine root C (g C/m^2) */
+   double frootc_storage[MAX_CN_PFTS];        /* fine root C storage (g C/m^2) */
+   double frootc_xfer[MAX_CN_PFTS];           /* fine root C transfer (g C/m^2) */
+   double livestemc[MAX_CN_PFTS];             /* live stem C (g C/m^2) */
+   double livestemc_storage[MAX_CN_PFTS];     /* live stem C storage (g C/m^2) */
+   double livestemc_xfer[MAX_CN_PFTS];        /* live stem C transfer (g C/m^2) */
+   double deadstemc[MAX_CN_PFTS];             /* dead stem C (g C/m^2) */
+   double deadstemc_storage[MAX_CN_PFTS];     /* dead stem C storage (g C/m^2) */
+   double deadstemc_xfer[MAX_CN_PFTS];        /* dead stem C transfer (g C/m^2) */
+   double livecrootc[MAX_CN_PFTS];            /* live coarse root C (g C/m^2) */
+   double livecrootc_storage[MAX_CN_PFTS];    /* live coarse root C storage (g C/m^2) */
+   double livecrootc_xfer[MAX_CN_PFTS];       /* live coarse root C transfer (g C/m^2) */
+   double deadcrootc[MAX_CN_PFTS];            /* dead coarse root C (g C/m^2) */
+   double deadcrootc_storage[MAX_CN_PFTS];    /* dead coarse root C storage (g C/m^2) */
+   double deadcrootc_xfer[MAX_CN_PFTS];       /* dead coarse root C transfer (g C/m^2) */
+   double gresp_storage[MAX_CN_PFTS];         /* growth respiration storage (g C/m^2) */
+   double gresp_xfer[MAX_CN_PFTS];            /* growth respiration transfer (g C/m^2) */
+   double cpool[MAX_CN_PFTS];                 /* temporary photosynthate C pool (g C/m^2) */
+   double xsmrpool[MAX_CN_PFTS];              /* abstract C pool to meet excess MR demand (g C/m^2) */
+   double pft_ctrunc[MAX_CN_PFTS];            /* PFT-level sink for C truncation (g C/m^2) */
+   double totvegc[MAX_CN_PFTS];               /* total vegetation C (g C/m^2) */
+   double woodc[MAX_CN_PFTS];                 /* wood C (g C/m^2) */
+   double fpsn[MAX_CN_PFTS];                  /* photosynthesis */
+   double ci[MAX_CN_PFTS];                    /* intracellular CO2 */
    /* PFT-level nitrogen state */
-   double leafn[21];                 /* leaf N (g N/m^2) */
-   double leafn_storage[21];         /* leaf N storage (g N/m^2) */
-   double leafn_xfer[21];            /* leaf N transfer (g N/m^2) */
-   double frootn[21];                /* fine root N (g N/m^2) */
-   double frootn_storage[21];        /* fine root N storage (g N/m^2) */
-   double frootn_xfer[21];           /* fine root N transfer (g N/m^2) */
-   double livestemn[21];             /* live stem N (g N/m^2) */
-   double livestemn_storage[21];     /* live stem N storage (g N/m^2) */
-   double livestemn_xfer[21];        /* live stem N transfer (g N/m^2) */
-   double deadstemn[21];             /* dead stem N (g N/m^2) */
-   double deadstemn_storage[21];     /* dead stem N storage (g N/m^2) */
-   double deadstemn_xfer[21];        /* dead stem N transfer (g N/m^2) */
-   double livecrootn[21];            /* live coarse root N (g N/m^2) */
-   double livecrootn_storage[21];    /* live coarse root N storage (g N/m^2) */
-   double livecrootn_xfer[21];       /* live coarse root N transfer (g N/m^2) */
-   double deadcrootn[21];            /* dead coarse root N (g N/m^2) */
-   double deadcrootn_storage[21];    /* dead coarse root N storage (g N/m^2) */
-   double deadcrootn_xfer[21];       /* dead coarse root N transfer (g N/m^2) */
-   double retransn[21];              /* retranslocated N (g N/m^2) */
+   double leafn[MAX_CN_PFTS];                 /* leaf N (g N/m^2) */
+   double leafn_storage[MAX_CN_PFTS];         /* leaf N storage (g N/m^2) */
+   double leafn_xfer[MAX_CN_PFTS];            /* leaf N transfer (g N/m^2) */
+   double frootn[MAX_CN_PFTS];                /* fine root N (g N/m^2) */
+   double frootn_storage[MAX_CN_PFTS];        /* fine root N storage (g N/m^2) */
+   double frootn_xfer[MAX_CN_PFTS];           /* fine root N transfer (g N/m^2) */
+   double livestemn[MAX_CN_PFTS];             /* live stem N (g N/m^2) */
+   double livestemn_storage[MAX_CN_PFTS];     /* live stem N storage (g N/m^2) */
+   double livestemn_xfer[MAX_CN_PFTS];        /* live stem N transfer (g N/m^2) */
+   double deadstemn[MAX_CN_PFTS];             /* dead stem N (g N/m^2) */
+   double deadstemn_storage[MAX_CN_PFTS];     /* dead stem N storage (g N/m^2) */
+   double deadstemn_xfer[MAX_CN_PFTS];        /* dead stem N transfer (g N/m^2) */
+   double livecrootn[MAX_CN_PFTS];            /* live coarse root N (g N/m^2) */
+   double livecrootn_storage[MAX_CN_PFTS];    /* live coarse root N storage (g N/m^2) */
+   double livecrootn_xfer[MAX_CN_PFTS];       /* live coarse root N transfer (g N/m^2) */
+   double deadcrootn[MAX_CN_PFTS];            /* dead coarse root N (g N/m^2) */
+   double deadcrootn_storage[MAX_CN_PFTS];    /* dead coarse root N storage (g N/m^2) */
+   double deadcrootn_xfer[MAX_CN_PFTS];       /* dead coarse root N transfer (g N/m^2) */
+   double retransn[MAX_CN_PFTS];              /* retranslocated N (g N/m^2) */
 
-   double npool[21];                 /* temporary photosynthate N pool (g N/m^2) */
-   double pft_ntrunc[21];            /* PFT-level sink for N truncation (g N/m^2) */
+   double npool[MAX_CN_PFTS];                 /* temporary photosynthate N pool (g N/m^2) */
+   double pft_ntrunc[MAX_CN_PFTS];            /* PFT-level sink for N truncation (g N/m^2) */
    /* column (band) physical state */
    double decl;                      /* solar declination angle (radians) */
    double fpi;                       /* fraction of potential immobilization */
@@ -1552,6 +1595,7 @@ typedef struct {
    double farea_burned;              /* timestep fractional area burned */
    double ann_farea_burned;          /* annual total fract. area burned */
    double hr;                    /* heterotrophic respiration (g C/m^2/s) */
+   double lithr;                 /* litter heterotrophic resp. (g C/m^2/s) */
    double nee;                   /* net ecosystem exchange (g C/m^2/s) */
    double nep;                   /* net ecosystem production (g C/m^2/s) */
    /* column (band) carbon state */

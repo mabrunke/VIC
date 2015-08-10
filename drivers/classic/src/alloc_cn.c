@@ -20,7 +20,7 @@ void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
 *******************************************************************/
 {
 
-  int iband, iveg, k;
+  int iband, iveg, k, r, n;
 
   *cn = (cn_data_struct *) calloc(Nbands, sizeof(cn_data_struct));
   /*  if (*cn == NULL)
@@ -29,6 +29,11 @@ void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
 	{
 	  for(iveg = 0; iveg < MAX_PFT; iveg++)
 	    {
+	      (*cn)[iband].Tveg[iveg] = 0.0;
+	      (*cn)[iband].rveg[iveg] = 0.0;
+	      (*cn)[iband].zov[iveg] = 0.0;
+	      (*cn)[iband].displ[iveg] = 0.0;
+	      (*cn)[iband].fwet[iveg] = 0.0;
 	      (*cn)[iband].LAI[iveg] = 0.0;
 	      (*cn)[iband].dormant_flag[iveg] = 0.0;
 	      (*cn)[iband].days_active[iveg] = 0.0;
@@ -119,6 +124,30 @@ void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
 	      (*cn)[iband].pft_ntrunc[iveg] = 0.0;
 	    }
 
+	  (*cn)[iband].Tair = 0.0;
+	  (*cn)[iband].vp = 0.0;
+	  (*cn)[iband].vpd = 0.0;
+	  (*cn)[iband].psfc = 0.0;
+	  (*cn)[iband].lwrad = 0.0;
+	  (*cn)[iband].swrad = 0.0;
+	  (*cn)[iband].precip = 0.0;
+	  for(r = 0; r < 2; r++)
+	    {
+	      (*cn)[iband].swrd[r] = 0.0;
+	      (*cn)[iband].swri[r] = 0.0;
+	    }
+	  (*cn)[iband].alb = 0.0;
+	  for(k = 0; k < Nnode + 2; k++)
+	    {
+	      (*cn)[iband].t_soisno[k] = 0.0;
+	      (*cn)[iband].z[k] = 0.0;
+	      (*cn)[iband].dz[k] = 0.0;
+	      (*cn)[iband].ice[k] = 0.0;
+	    }
+	  (*cn)[iband].z0 = 0.0;
+	  (*cn)[iband].z0s = 0.0;
+	  (*cn)[iband].baseflow = 0.0;
+	  (*cn)[iband].snowdep = 0.0;
 	  (*cn)[iband].decl = 0.0;
 	  (*cn)[iband].fpi = 0.0;
 	  (*cn)[iband].fpg = 0.0;
@@ -126,12 +155,27 @@ void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
 	  (*cn)[iband].cannsum_npp = 0.0;
 	  (*cn)[iband].cannavg_t2m = 0.0;
 	  for(k = 0; k < Nnode; k++)
-	    (*cn)[iband].watfc[k] = 0.0;
+	    {
+	      (*cn)[iband].watfc[k] = 0.0;
+	      (*cn)[iband].moist[k] = 0.0;
+	      for(iveg = 0; iveg < MAX_PFT; iveg++)
+		  (*cn)[iband].rootfr[iveg][k] = 0.0;
+	      for(n = 0; n < 2; n++)
+		{
+		  (*cn)[iband].bsw[k][n] = 0.0;
+		  (*cn)[iband].sucsat[k][n] = 0.0;
+		  (*cn)[iband].soisuc[k][n] = 0.0;
+		}
+	    }
 	  (*cn)[iband].me = 0.0;
 	  (*cn)[iband].fire_prob = 0.0;
 	  (*cn)[iband].mean_fire_prob = 0.0;
 	  (*cn)[iband].fireseasonl = 0.0;
 	  (*cn)[iband].ann_farea_burned = 0.0;
+	  (*cn)[iband].hr = 0.0;
+	  (*cn)[iband].lithr = 0.0;
+	  (*cn)[iband].nee = 0.0;
+	  (*cn)[iband].nep = 0.0;
 	  (*cn)[iband].cwdc = 0.0;
 	  (*cn)[iband].litr1c = 0.0;
 	  (*cn)[iband].litr2c = 0.0;
@@ -161,9 +205,6 @@ void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
 	  (*cn)[iband].totcoln = 0.0;
 	  (*cn)[iband].prod10n = 0.0;
 	  (*cn)[iband].prod100n = 0.0;
-	  (*cn)[iband].hr = 0.0;
-	  (*cn)[iband].nee = 0.0;
-	  (*cn)[iband].nep = 0.0;
 
 	  }
 

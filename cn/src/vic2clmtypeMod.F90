@@ -1,43 +1,17 @@
-  subroutine vic2clmtype(nlevgrnd, rec, nrec, adspinup, yr, mo, day, &
+  subroutine vic2clmtype(nlevgrnd, rec, nrec, adspinup, init_state, yr, mo, day, &
 	secs, jday, yr1, jday1, dt, lat, lon, begg, endg, begc, endc, begp, &
-	endp, num_soilc, num_soilp, psfc, tair, vp, vpd, lwrad, swrad, swrd, &
-	swri, alb, dep, thick, baseflow, moist, ice, tsoisno, t2m, tveg, &
-	snodep, fvegwet, rootf, satpsi, soipsi, coeff, rveg, zo, zos, zov, &
-	displ, lai, soilcfast, soilcmid, soilcslo1, soilcslo2, litrlabc, &
-	litrcellc, litrligc, cwoodc, leafcc, finrtc, livstemc, deadstemcc, &
-	livcorsrtc, deadcorsrtc, woodcc, soilnfast, soilnmid, soilnslo1, &
-	soilnslo2, soilminn, litrlabn, litrcelln, litrlign, cwoodn, leafnn, &
-	finrtn, livstemn, deadstemnn, livcorsrtn, deadcorsrtn, vegctot, &
-	litctot, somctot, prod1gb4, prod1g, prod1n, darkresp, maintresp, groresp, autoresp, heteroresp, &
-	litresp, ecoexchn, prodecon, dormancy, ndaysact, onsetflg, onsetcount,&
-	onsetgddflg, onsetfdd, onsetgdd, onsetswi, offsetflg, offsetcount, &
-	offsetfdd, offsetswi, lgsfact, backlfr, backtgr, daylen, &
-	prevdaylen, annavgt2m, tempavgt2m, cavail, cflxrecov, allocpnow, &
-	callom, nallom, plantndem, tempsumpotgpp, annsumpotgpp, &
-	tempmxretransn, annmxretransn, availretransn, plantnalloc, &
-	plantcalloc, cflxex, dwnreg, prevleafc2litr, prevfinrtc2litr, &
-	tempsumnpp, annsumnpp, leafcstor, leafctrans, finrtcstor, &
-	finrtctrans, livstemcstor, livstemctrans, deadstemcstor, &
-	deadstemctrans, livcorsrtcstor, livcorsrtctrans, deadcorsrtcstor, &
-	deadcorsrtctrans, grorespstor, groresptrans, photocpool, mrcpool, &
-	ctruncpft, leafnstor, leafntrans, finrtnstor, finrtntrans, &
-	livstemnstor, livstemntrans, deadstemnstor, deadstemntrans, &
-	livcorsrtnstor, livcorsrtntrans, deadcorsrtnstor, deadcorsrtntrans, &
-	nretrans, photonpool, ntruncpft, declin, potimmobfract, potgppfract, &
-	annsumcount, colannsumnpp, colannsumt2m, fldcapwat, extinctmoist, &
-	fireprob, meanfireprob, fireseasnlen, areafractburn, &
-	annareafractburn, seedcc, colctrunc, colctot, woodprodc10, &
-	woodprodc100, seednn, colntrunc, colntot, woodprodn10, woodprodn100, &
-	litrfall, photosynth, intco2, stomresist, abspar, init_state)
+	endp, num_soilc, num_soilp, vic_cn) BIND(C, &
+	name='vic2clmtype')
 
 ! 03/06/2014  Added sending of CN variables for inclusion in VIC 
 !             state files.                                          MAB
 !
 ! !USES:
+   use, intrinsic :: ISO_C_BINDING
    use shr_kind_mod, only: r8 => shr_kind_r8
    use shr_const_mod, only: SHR_CONST_PI, SHR_CONST_TKFRZ
    use clmtype
-   use clm_varpar,        only : max_bands, max_layers, max_nodes, max_veg, mxpft, numrad
+   use clm_varpar, only : max_bands, max_layers, max_nodes, max_veg, mxpft, numrad
    use shr_orb_mod
    use SurfaceAlbedoMod, only : SurfaceAlbedo
    use SurfaceRadiationMod, only : SurfaceRadiation
@@ -62,6 +36,7 @@
    integer, intent(in) :: nrec  ! Total number of records
 !   integer, intent(in) :: nspinup ! Year in spin-up
    integer, intent(in) :: adspinup ! Flag for AD spin-up
+   integer , intent(in)    :: init_state  ! flag to determine where initial state comes from
    real(r8), intent(in) :: lat  ! Latitude (degrees N)
    real(r8), intent(in) :: lon  ! Longitude (degrees E)
    integer, intent(in) :: begg	! Beginning grid cell index = 1
@@ -72,178 +47,195 @@
    integer, intent(inout) :: endp  ! Ending veg. type index = Nveg
    integer, intent(in) :: num_soilc ! number of soil columns in filter
    integer, intent(in) :: num_soilp ! number of soil pfts in filter
-   real(r8), intent(in) :: psfc     ! surface pressure (Pa)
-   real(r8), intent(in) :: tair     ! atmospheric temperature (C)
-   real(r8), intent(in) :: vp       ! atmos. vapor pressure (Pa)
-   real(r8), intent(in) :: vpd      ! vapor pressure deficit (Pa)
-   real(r8), intent(in) :: lwrad    ! longwave radiation (W/m^2)
-   real(r8), intent(in) :: swrad    ! shortwave radiation (W/m^2)
-   real(r8), intent(in) :: swrd(numrad)     ! direct SW radiation (W/m^2)
-   real(r8), intent(in) :: swri(numrad)     ! diffuse SW radiation (W/m^2)
-   real(r8), intent(in) :: alb(max_bands)    ! surface albedo
-   real(r8), intent(in) :: dep(max_nodes+2,max_bands)  ! layer depth (m)
-   real(r8), intent(in) :: thick(max_nodes+2,max_bands)! layer thickness (m)
-   real(r8), intent(in) :: baseflow(max_bands)         ! baseflow
-   real(r8), intent(in) :: moist(max_nodes+2,max_bands)! soil moisture
-   real(r8), intent(in) :: ice(max_nodes+2,max_bands)  ! soil ice content
-   real(r8), intent(in) :: tsoisno(max_nodes+2,max_bands) ! layer temperature
-   real(r8), intent(in) :: t2m(mxpft)                 ! 2-m air temperature
-   real(r8), intent(in) :: tveg(0:mxpft,max_bands)     ! veg temperature
-   real(r8), intent(in) :: snodep(max_bands)           ! snow depth
-   real(r8), intent(in) :: fvegwet(0:mxpft,max_bands)  ! fract of wet veg
-   real(r8), intent(in) :: rootf(max_nodes,mxpft,max_bands) ! root fraction
-   real(r8), intent(in) :: satpsi(max_nodes,max_bands,2) ! sat matric potential
-   real(r8), intent(in) :: soipsi(max_nodes,max_bands,2) ! soil matric potential
-   real(r8), intent(in) :: coeff(max_nodes,max_bands,2)  ! Clapp-Hornberger coef
-   real(r8), intent(in) :: rveg(0:mxpft,max_bands)       ! leaf resistance
-   real(r8), intent(in) :: zo        ! soil roughness length
-   real(r8), intent(in) :: zos       ! snow roughness length
-   real(r8), intent(in) :: zov(0:mxpft,max_bands)   ! veg. roughness length
-   real(r8), intent(in) :: displ(0:mxpft,max_bands) ! displacement height
-   real(r8), intent(inout) :: lai(0:mxpft,max_bands)! leaf area index
-   real(r8), intent(inout) :: soilcfast(max_bands)  ! fast soil C pool
-   real(r8), intent(inout) :: soilcmid(max_bands)   ! medium soil C pool
-   real(r8), intent(inout) :: soilcslo1(max_bands)  ! slow soil C pool
-   real(r8), intent(inout) :: soilcslo2(max_bands)  ! slowest soil C pool
-   real(r8), intent(inout) :: litrlabc(max_bands)   ! litter labile C
-   real(r8), intent(inout) :: litrcellc(max_bands)  ! litter cellulose C
-   real(r8), intent(inout) :: litrligc(max_bands)   ! litter lignin C
-   real(r8), intent(inout) :: cwoodc(max_bands)     ! course woody debris C
-   real(r8), intent(inout) :: leafcc(0:mxpft,max_bands) ! leaf C
-   real(r8), intent(inout) :: finrtc(0:mxpft,max_bands)       ! fine root C
-   real(r8), intent(inout) :: livstemc(0:mxpft,max_bands)    ! live stem C
-   real(r8), intent(inout) :: deadstemcc(0:mxpft,max_bands)    ! dead stem C
-   real(r8), intent(inout) :: livcorsrtc(0:mxpft,max_bands) ! live coarse root C
-   real(r8), intent(inout) :: deadcorsrtc(0:mxpft,max_bands)! dead coarse root C
-   real(r8), intent(inout) :: woodcc(0:mxpft,max_bands)        ! wood C
-   real(r8), intent(inout) :: soilnfast(max_bands)  ! fast soil N
-   real(r8), intent(inout) :: soilnmid(max_bands)   ! medium soil N
-   real(r8), intent(inout) :: soilnslo1(max_bands)  ! slow soil N
-   real(r8), intent(inout) :: soilnslo2(max_bands)  ! slowest soil N
-   real(r8), intent(inout) :: soilminn(max_bands)   ! soil mineral N
-   real(r8), intent(inout) :: litrlabn(max_bands)   ! litter labile N
-   real(r8), intent(inout) :: litrcelln(max_bands)  ! litter cellulose N
-   real(r8), intent(inout) :: litrlign(max_bands)   ! litter lignin N
-   real(r8), intent(inout) :: cwoodn(max_bands)     ! course woody debris N
-   real(r8), intent(inout) :: leafnn(0:mxpft,max_bands) ! leaf N
-   real(r8), intent(inout) :: finrtn(0:mxpft,max_bands)       ! fine root N
-   real(r8), intent(inout) :: livstemn(0:mxpft,max_bands)    ! live stem N
-   real(r8), intent(inout) :: deadstemnn(0:mxpft,max_bands)    ! dead stem N
-   real(r8), intent(inout) :: livcorsrtn(0:mxpft,max_bands) ! live coarse root N
-   real(r8), intent(inout) :: deadcorsrtn(0:mxpft,max_bands)! dead coarse root N
-   real(r8), intent(inout) :: vegctot(0:mxpft,max_bands)    ! total veg C
-   real(r8), intent(inout) :: litctot(max_bands)            ! total litter C
-   real(r8), intent(inout) :: somctot(max_bands)            ! total SOM C
-   real(r8), intent(inout) :: prod1gb4(0:mxpft,max_bands)   ! GPP before downreg
-   real(r8), intent(inout) :: prod1g(0:mxpft,max_bands)     ! GPP
-   real(r8), intent(inout) :: prod1n(0:mxpft,max_bands)     ! NPP
-   real(r8), intent(inout) :: darkresp(0:mxpft,max_bands)   ! dark respiration
-   real(r8), intent(inout) :: maintresp(0:mxpft,max_bands)  ! maintenance resp
-   real(r8), intent(inout) :: groresp(0:mxpft,max_bands)    ! growth respiration
-   real(r8), intent(inout) :: autoresp(0:mxpft,max_bands)   ! auto respiration
-   real(r8), intent(inout) :: heteroresp(max_bands)         ! hetero respiration
-   real(r8), intent(inout) :: litresp(max_bands)         ! litter respiration
-   real(r8), intent(inout) :: ecoexchn(max_bands)                     ! NEE
-   real(r8), intent(inout) :: prodecon(max_bands)                     ! NEP
-   real(r8), intent(inout) :: dormancy(0:mxpft,max_bands)   ! dormancy
-   real(r8), intent(inout) :: ndaysact(0:mxpft,max_bands)   ! # days since dormancy
-   real(r8), intent(inout) :: onsetflg(0:mxpft,max_bands)   ! onset flag
-   real(r8), intent(inout) :: onsetcount(0:mxpft,max_bands) ! onset counter
-   real(r8), intent(inout) :: onsetgddflg(0:mxpft,max_bands) ! onset flag for grow deg sum
-   real(r8), intent(inout) :: onsetfdd(0:mxpft,max_bands)   ! onset freeze days
-   real(r8), intent(inout) :: onsetgdd(0:mxpft,max_bands)   ! onset grow deg days
-   real(r8), intent(inout) :: onsetswi(0:mxpft,max_bands)   ! onset soil water index
-   real(r8), intent(inout) :: offsetflg(0:mxpft,max_bands)   ! # days since dormancy
-   real(r8), intent(inout) :: offsetcount(0:mxpft,max_bands) ! onset counter
-   real(r8), intent(inout) :: offsetfdd(0:mxpft,max_bands)   ! onset freeze days
-   real(r8), intent(inout) :: offsetswi(0:mxpft,max_bands)   ! onset soil water index
-   real(r8), intent(inout) :: lgsfact(0:mxpft,max_bands)    ! long grow season factor
-   real(r8), intent(inout) :: backlfr(0:mxpft,max_bands)    ! background litterfall
-   real(r8), intent(inout) :: backtgr(0:mxpft,max_bands)    ! background transfer growth
-   real(r8), intent(inout) :: daylen(0:mxpft,max_bands)     ! daylength
-   real(r8), intent(inout) :: prevdaylen(0:mxpft,max_bands) ! previous daylength
-   real(r8), intent(inout) :: annavgt2m(0:mxpft,max_bands)  ! annual avg 2-m air temp.
-   real(r8), intent(inout) :: tempavgt2m(0:mxpft,max_bands) ! temp avg 2-m air temp.
-   real(r8), intent(inout) :: cavail(0:mxpft,max_bands)     ! C flx avail for allocation
-   real(r8), intent(inout) :: cflxrecov(0:mxpft,max_bands)  ! C flx for recovery
-   real(r8), intent(inout) :: allocpnow(0:mxpft,max_bands)  ! Alloc fract for new growth
-   real(r8), intent(inout) :: callom(0:mxpft,max_bands)     ! C allocation index
-   real(r8), intent(inout) :: nallom(0:mxpft,max_bands)     ! N allocation index
-   real(r8), intent(inout) :: plantndem(0:mxpft,max_bands)  ! plant N demand
-   real(r8), intent(inout) :: tempsumpotgpp(0:mxpft,max_bands) ! temp sum pot GPP
-   real(r8), intent(inout) :: annsumpotgpp(0:mxpft,max_bands) ! ann sum pot GPP
-   real(r8), intent(inout) :: tempmxretransn(0:mxpft,max_bands) ! temp max retranslocated N
-   real(r8), intent(inout) :: annmxretransn(0:mxpft,max_bands) ! ann max retranslocated N
-   real(r8), intent(inout) :: availretransn(0:mxpft,max_bands) ! avail retranslocated N
-   real(r8), intent(inout) :: plantnalloc(0:mxpft,max_bands) ! allocated N flux
-   real(r8), intent(inout) :: plantcalloc(0:mxpft,max_bands) ! allocated C flux
-   real(r8), intent(inout) :: cflxex(0:mxpft,max_bands)      ! C flux not alloc
-   real(r8), intent(inout) :: dwnreg(0:mxpft,max_bands)      ! GPP reduct from N limit
-   real(r8), intent(inout) :: prevleafc2litr(0:mxpft,max_bands) ! prev leaf C to litter
-   real(r8), intent(inout) :: prevfinrtc2litr(0:mxpft,max_bands) ! prev fine root C to litter
-   real(r8), intent(inout) :: tempsumnpp(0:mxpft,max_bands)  ! temp ann sum NPP
-   real(r8), intent(inout) :: annsumnpp(0:mxpft,max_bands)   ! ann sum NPP
-   real(r8), intent(inout) :: leafcstor(0:mxpft,max_bands)   ! leaf C storage
-   real(r8), intent(inout) :: leafctrans(0:mxpft,max_bands)  ! leaf C transfer
-   real(r8), intent(inout) :: finrtcstor(0:mxpft,max_bands)  ! fine root C storage
-   real(r8), intent(inout) :: finrtctrans(0:mxpft,max_bands) ! fine root C transfer
-   real(r8), intent(inout) :: livstemcstor(0:mxpft,max_bands) ! fine root C storage
-   real(r8), intent(inout) :: livstemctrans(0:mxpft,max_bands) ! fine root C transfer
-   real(r8), intent(inout) :: deadstemcstor(0:mxpft,max_bands) ! fine root C storage
-   real(r8), intent(inout) :: deadstemctrans(0:mxpft,max_bands) ! fine root C transfer
-   real(r8), intent(inout) :: livcorsrtcstor(0:mxpft,max_bands) ! live coarse root C storage
-   real(r8), intent(inout) :: livcorsrtctrans(0:mxpft,max_bands) ! live coarse root C transfer
-   real(r8), intent(inout) :: deadcorsrtcstor(0:mxpft,max_bands) ! dead coarse root C storage
-   real(r8), intent(inout) :: deadcorsrtctrans(0:mxpft,max_bands) ! dead coarse root C transfer
-   real(r8), intent(inout) :: grorespstor(0:mxpft,max_bands)  ! growth respiration storage
-   real(r8), intent(inout) :: groresptrans(0:mxpft,max_bands) ! growth respiration transfer
-   real(r8), intent(inout) :: photocpool(0:mxpft,max_bands)   ! photosynthate C pool
-   real(r8), intent(inout) :: mrcpool(0:mxpft,max_bands)      ! C pool for excess MR demand
-   real(r8), intent(inout) :: ctruncpft(0:mxpft,max_bands)    ! PFT sink for C truncation
-   real(r8), intent(inout) :: leafnstor(0:mxpft,max_bands)   ! leaf N storage
-   real(r8), intent(inout) :: leafntrans(0:mxpft,max_bands)  ! leaf N transfer
-   real(r8), intent(inout) :: finrtnstor(0:mxpft,max_bands)  ! fine root N storage
-   real(r8), intent(inout) :: finrtntrans(0:mxpft,max_bands) ! fine root N transfer
-   real(r8), intent(inout) :: livstemnstor(0:mxpft,max_bands) ! fine root N storage
-   real(r8), intent(inout) :: livstemntrans(0:mxpft,max_bands) ! fine root N transfer
-   real(r8), intent(inout) :: deadstemnstor(0:mxpft,max_bands) ! dead stem N storage
-   real(r8), intent(inout) :: deadstemntrans(0:mxpft,max_bands) ! dead stem N transfer
-   real(r8), intent(inout) :: livcorsrtnstor(0:mxpft,max_bands) ! live coarse root N storage
-   real(r8), intent(inout) :: livcorsrtntrans(0:mxpft,max_bands) ! live coarse root N transfer
-   real(r8), intent(inout) :: deadcorsrtnstor(0:mxpft,max_bands) ! dead coarse root N storage
-   real(r8), intent(inout) :: deadcorsrtntrans(0:mxpft,max_bands) ! dead coarse root N transfer
-   real(r8), intent(inout) :: nretrans(0:mxpft,max_bands)     ! retranslocated N
-   real(r8), intent(inout) :: photonpool(0:mxpft,max_bands)   ! photosynthate N
-   real(r8), intent(inout) :: ntruncpft(0:mxpft,max_bands)    ! PFT sink for N truncation
-   real(r8), intent(inout) :: declin(max_bands)              ! solar declination
-   real(r8), intent(inout) :: potimmobfract(max_bands)        ! pot. immobilization fract
-   real(r8), intent(inout) :: potgppfract(max_bands)          ! pot GPP fraction
-   real(r8), intent(inout) :: annsumcount(max_bands)          ! ann sum counter
-   real(r8), intent(inout) :: colannsumnpp(max_bands)         ! ann sum of NPP
-   real(r8), intent(inout) :: colannsumt2m(max_bands)         ! ann sum of 2-m air temp
-   real(r8), intent(inout) :: fldcapwat(max_nodes,max_bands)  ! vol soil wat @ field capacity
-   real(r8), intent(inout) :: extinctmoist(max_bands)         ! moisture of extinction
-   real(r8), intent(inout) :: fireprob(max_bands)             ! fire probability
-   real(r8), intent(inout) :: meanfireprob(max_bands)         ! mean fire prob
-   real(r8), intent(inout) :: fireseasnlen(max_bands)         ! fire season length
-   real(r8), intent(inout) :: areafractburn(max_bands)       ! fract area burned
-   real(r8), intent(inout) :: annareafractburn(max_bands)     ! ann fract area burned
-   real(r8), intent(inout) :: seedcc(max_bands)               ! C pool for seeding new PFTs
-   real(r8), intent(inout) :: colctrunc(max_bands)            ! col-lev C sink for truncation
-   real(r8), intent(inout) :: colctot(max_bands)              ! total column C
-   real(r8), intent(inout) :: woodprodc10(max_bands)          ! 10-yr lifespan wood product C
-   real(r8), intent(inout) :: woodprodc100(max_bands)         ! 100-yr lifespan wood product C
-   real(r8), intent(inout) :: seednn(max_bands)               ! N pool for seeding new PFTs
-   real(r8), intent(inout) :: colntrunc(max_bands)            ! col-lev N sink for truncation
-   real(r8), intent(inout) :: colntot(max_bands)              ! total column N
-   real(r8), intent(inout) :: woodprodn10(max_bands)          ! 10-yr lifespan wood product N
-   real(r8), intent(inout) :: woodprodn100(max_bands)         ! 100-yr lifespan wood product N
-   real(r8), intent(inout) :: photosynth(0:mxpft,max_bands) ! photosynthesis
-   real(r8), intent(inout) :: litrfall(0:mxpft,max_bands)   ! litterfall
-   real(r8), intent(inout) :: intco2(0:mxpft,max_bands)     ! intracellular CO2
-   real(r8), intent(inout) :: stomresist(0:mxpft,max_bands) ! stomatal resistance
-   real(r8), intent(inout) :: abspar(0:mxpft,max_bands)     ! absorbed PAR
-   integer , intent(in)    :: init_state                     ! flag to determine where initial state comes from
+
+    TYPE, BIND(C) :: vic_cn_data_type
+   	! atmospheric quantities
+   	REAL(C_DOUBLE) :: Tair                               ! air temperature
+   	REAL(C_DOUBLE) :: vp                                 ! vapor pressure
+   	REAL(C_DOUBLE) :: vpd                                ! vapor pressure depression
+   	REAL(C_DOUBLE) :: psfc                               ! surface pressure
+   	REAL(C_DOUBLE) :: lwrad                              ! longwave radiation
+   	REAL(C_DOUBLE) :: swrad                              ! shortwave radiation
+   	REAL(C_DOUBLE) :: precip                             ! precipitation
+   	REAL(C_DOUBLE) :: swrd(numrad)                            ! direct shortwave radiation
+   	REAL(C_DOUBLE) :: swri(numrad)                            ! diffuse shortwave radiation
+   	REAL(C_DOUBLE) :: alb                                ! albedo
+   	REAL(C_DOUBLE) :: t2m(0:mxpft)                            ! 2-m air temperature
+   	REAL(C_DOUBLE) :: t_soisno(max_nodes+2)                        ! soil/snow temperature
+   	! Soil properties
+   	REAL(C_DOUBLE) :: z(max_nodes+2)                               ! Node depth
+   	REAL(C_DOUBLE) :: dz(max_nodes+2)                              ! Node thickness
+   	REAL(C_DOUBLE) :: z0                                 ! Surface roughness
+   	REAL(C_DOUBLE) :: z0s                                ! Snow roughness
+   	! Vegetation characteristics
+   	REAL(C_DOUBLE) :: Tveg(0:mxpft)                           ! vegetation temperature
+   	REAL(C_DOUBLE) :: rveg(0:mxpft)                           ! vegetation resistance
+   	REAL(C_DOUBLE) :: zov(0:mxpft)                            ! vegetation roughness
+   	REAL(C_DOUBLE) :: displ(0:mxpft)                          ! displacement height
+   	REAL(C_DOUBLE) :: fwet(0:mxpft)                           ! wet veg fraction
+   	! Soil hydrology
+   	REAL(C_DOUBLE) :: baseflow                           ! baseflow
+   	REAL(C_DOUBLE) :: moist(max_nodes)                           ! soil moisture
+   	REAL(C_DOUBLE) :: ice(max_nodes+2)                               ! soil ice
+   	REAL(C_DOUBLE) :: rootfr(max_nodes,0:mxpft)                    ! root fraction
+   	REAL(C_DOUBLE) :: bsw(2,max_nodes)                           ! Clapp-Hornberger coefficient
+   	REAL(C_DOUBLE) :: sucsat(2,max_nodes)                        ! saturated suction
+   	REAL(C_DOUBLE) :: soisuc(2,max_nodes)                        ! soil matrix potential
+   	REAL(C_DOUBLE) :: snowdep                            ! snow depth
+        ! PFT-level ecophysiological variables
+        REAL(C_DOUBLE) :: LAI(0:mxpft)                   ! leaf area index
+        REAL(C_DOUBLE) :: dormant_flag(0:mxpft)          ! dormancy flag
+        REAL(C_DOUBLE) :: days_active(0:mxpft)           ! # days since last dormancy
+        REAL(C_DOUBLE) :: onset_flag(0:mxpft)            ! onset flag
+        REAL(C_DOUBLE) :: onset_counter(0:mxpft)         ! onset days counter
+        REAL(C_DOUBLE) :: onset_gddflag(0:mxpft)         ! onset flag for growing deg day sum
+        REAL(C_DOUBLE) :: onset_fdd(0:mxpft)             ! onset freezing deg day counter
+        REAL(C_DOUBLE) :: onset_gdd(0:mxpft)             ! onset growing degree days
+        REAL(C_DOUBLE) :: onset_swi(0:mxpft)             ! onset soil water index
+        REAL(C_DOUBLE) :: offset_flag(0:mxpft)           ! offset flag
+        REAL(C_DOUBLE) :: offset_counter(0:mxpft)        ! offset days counter
+        REAL(C_DOUBLE) :: offset_fdd(0:mxpft)            ! offset freezing deg day counter
+        REAL(C_DOUBLE) :: offset_swi(0:mxpft)            ! offset soil water index
+        REAL(C_DOUBLE) :: lgsf(0:mxpft)                  ! long growing season factor
+        REAL(C_DOUBLE) :: bglfr(0:mxpft)                 ! background litterfall rate (1/s)
+        REAL(C_DOUBLE) :: bgtr(0:mxpft)                  ! background transfer growth rate (1/s)
+        REAL(C_DOUBLE) :: dayl(0:mxpft)                  ! daylength (s)
+        REAL(C_DOUBLE) :: prev_dayl(0:mxpft)             ! daylength at previous timestep (s)
+        REAL(C_DOUBLE) :: annavg_t2m(0:mxpft)            ! annual average 2-m air temperature (K)
+        REAL(C_DOUBLE) :: tempavg_t2m(0:mxpft)           ! temporary average 2-m air temperature (K)
+        REAL(C_DOUBLE) :: gpp2(0:mxpft)                  ! GPP flux before downregulation (g C/m^2/s)
+        REAL(C_DOUBLE) :: availc(0:mxpft)                ! C flux available for allocation (g C/m^2/s)
+        REAL(C_DOUBLE) :: xsmrpool_recover(0:mxpft)      ! C flux assigned to recovery (g C/m^2/s)
+        REAL(C_DOUBLE) :: alloc_pnow(0:mxpft)            ! fraction of current allocation as new growth
+        REAL(C_DOUBLE) :: c_allometry(0:mxpft)           ! C allocation index
+        REAL(C_DOUBLE) :: n_allometry(0:mxpft)           ! N allocation index
+        REAL(C_DOUBLE) :: plant_ndemand(0:mxpft)         ! N flux required to support GPP (g N/m^2/s)
+        REAL(C_DOUBLE) :: tempsum_potential_gpp(0:mxpft) ! temporary annual sum of potential GPP
+        REAL(C_DOUBLE) :: annsum_potential_gpp(0:mxpft)  ! annuals sum of potential GPP
+        REAL(C_DOUBLE) :: tempmax_retransn(0:mxpft)      ! temporary annual max of retrans N pool (g N/m^2)
+        REAL(C_DOUBLE) :: annmax_retransn(0:mxpft)       ! annual max of retransloc N pool (g N/m^2)
+        REAL(C_DOUBLE) :: avail_retransn(0:mxpft)        ! N flux avail for retransloc (g N/m^2/s)
+        REAL(C_DOUBLE) :: plant_nalloc(0:mxpft)          ! total allocated N flux (g N/m^2/s)
+        REAL(C_DOUBLE) :: plant_calloc(0:mxpft)          ! total allocated C flux (g C/m^2/s)
+        REAL(C_DOUBLE) :: excess_cflux(0:mxpft)          ! C flux not allocated (g C/m^2/s)
+        REAL(C_DOUBLE) :: downreg(0:mxpft)               ! fract reduction in GPP due to N limit
+        REAL(C_DOUBLE) :: prev_leafc_to_litter(0:mxpft)  ! previous leaf C litterfall (g C/m^2/s)
+        REAL(C_DOUBLE) :: prev_frootc_to_litter(0:mxpft) ! previous froot C litterfall (g C/m^2/s)
+        REAL(C_DOUBLE) :: tempsum_npp(0:mxpft)           ! temporary annual sum of NPP (g C/m^2/yr)
+        REAL(C_DOUBLE) :: annsum_npp(0:mxpft)            ! annual sum of NPP (g C/m^2/yr)
+        REAL(C_DOUBLE) :: gpp(0:mxpft)                   ! gross primary production (g C/m^2/s)
+        REAL(C_DOUBLE) :: npp(0:mxpft)                   ! net primary production (g C/m^2/s)
+        REAL(C_DOUBLE) :: ar(0:mxpft)                    ! autotrophic respiration (g C/m^2/s)
+   	REAL(C_DOUBLE) :: gr(0:mxpft)                    ! growth respiration (g C/m^2/s)
+   	REAL(C_DOUBLE) :: mr(0:mxpft)                    ! maintenance respiration (g C/m^2/s)
+   	REAL(C_DOUBLE) :: leaf_mr(0:mxpft)               ! leaf maintenance respiration (g C/m^2/s)
+   	REAL(C_DOUBLE) :: litfall(0:mxpft)               ! litterfall (g C/m^2/s)
+   	REAL(C_DOUBLE) :: rs(0:mxpft)                    ! stomatal resistance
+   	REAL(C_DOUBLE) :: par(0:mxpft)                   ! absorbed PAR
+        ! PFT-level carbon state
+        REAL(C_DOUBLE) :: leafc(0:mxpft)                 ! leaf C (g C/m^2)
+        REAL(C_DOUBLE) :: leafc_storage(0:mxpft)         ! leaf C storage (g C/m^2)
+        REAL(C_DOUBLE) :: leafc_xfer(0:mxpft)            ! leaf C transfer (g C/m^2)
+        REAL(C_DOUBLE) :: frootc(0:mxpft)                ! fine root C (g C/m^2)
+        REAL(C_DOUBLE) :: frootc_storage(0:mxpft)        ! fine root C storage (g C/m^2)
+        REAL(C_DOUBLE) :: frootc_xfer(0:mxpft)           ! fine root C transfer (g C/m^2)
+        REAL(C_DOUBLE) :: livestemc(0:mxpft)             ! live stem C (g C/m^2)
+        REAL(C_DOUBLE) :: livestemc_storage(0:mxpft)     ! live stem C storage (g C/m^2)
+        REAL(C_DOUBLE) :: livestemc_xfer(0:mxpft)        ! live stem C transfer (g C/m^2)
+        REAL(C_DOUBLE) :: deadstemc(0:mxpft)             ! dead stem C (g C/m^2)
+        REAL(C_DOUBLE) :: deadstemc_storage(0:mxpft)     ! dead stem C storage (g C/m^2)
+        REAL(C_DOUBLE) :: deadstemc_xfer(0:mxpft)        ! dead stem C transfer (g C/m^2)
+        REAL(C_DOUBLE) :: livecrootc(0:mxpft)            ! live coarse root C (g C/m^2)
+        REAL(C_DOUBLE) :: livecrootc_storage(0:mxpft)    ! live coarse root C storage (g C/m^2)
+        REAL(C_DOUBLE) :: livecrootc_xfer(0:mxpft)       ! live coarse root C transfer (g C/m^2)
+        REAL(C_DOUBLE) :: deadcrootc(0:mxpft)            ! dead coarse root C (g C/m^2)
+        REAL(C_DOUBLE) :: deadcrootc_storage(0:mxpft)    ! dead coarse root C storage (g C/m^2)
+        REAL(C_DOUBLE) :: deadcrootc_xfer(0:mxpft)       ! dead coarse root C transfer (g C/m^2)
+        REAL(C_DOUBLE) :: gresp_storage(0:mxpft)         ! growth respiration storage (g C/m^2)
+        REAL(C_DOUBLE) :: gresp_xfer(0:mxpft)            ! growth respiration transfer (g C/m^2)
+        REAL(C_DOUBLE) :: cpool(0:mxpft)                 ! temporary photosynthate C pool (g C/m^2)
+        REAL(C_DOUBLE) :: xsmrpool(0:mxpft)              ! abstract C pool to meet excess MR demand (g C/m^2)
+        REAL(C_DOUBLE) :: pft_ctrunc(0:mxpft)            ! PFT-level sink for C truncation (g C/m^2)
+        REAL(C_DOUBLE) :: totvegc(0:mxpft)               ! total vegetation C (g C/m^2)
+        REAL(C_DOUBLE) :: woodc(0:mxpft)                 ! wood C (g C/m^2)
+    	REAL(C_DOUBLE) :: fpsn(0:mxpft)                  ! photosynthesis
+   	REAL(C_DOUBLE) :: ci(0:mxpft)                    ! intracellular CO2
+       ! PFT-level nitrogen state
+        REAL(C_DOUBLE) :: leafn(0:mxpft)                 ! leaf N (g N/m^2)
+        REAL(C_DOUBLE) :: leafn_storage(0:mxpft)         ! leaf N storage (g N/m^2)
+        REAL(C_DOUBLE) :: leafn_xfer(0:mxpft)            ! leaf N transfer (g N/m^2)
+        REAL(C_DOUBLE) :: frootn(0:mxpft)                ! fine root N (g N/m^2)
+        REAL(C_DOUBLE) :: frootn_storage(0:mxpft)        ! fine root N storage (g N/m^2)
+        REAL(C_DOUBLE) :: frootn_xfer(0:mxpft)           ! fine root N transfer (g N/m^2)
+        REAL(C_DOUBLE) :: livestemn(0:mxpft)             ! live stem N (g N/m^2)
+        REAL(C_DOUBLE) :: livestemn_storage(0:mxpft)     ! live stem N storage (g N/m^2)
+        REAL(C_DOUBLE) :: livestemn_xfer(0:mxpft)        ! live stem N transfer (g N/m^2)
+        REAL(C_DOUBLE) :: deadstemn(0:mxpft)             ! dead stem N (g N/m^2)
+        REAL(C_DOUBLE) :: deadstemn_storage(0:mxpft)     ! dead stem N storage (g N/m^2)
+        REAL(C_DOUBLE) :: deadstemn_xfer(0:mxpft)        ! dead stem N transfer (g N/m^2)
+        REAL(C_DOUBLE) :: livecrootn(0:mxpft)            ! live coarse root N (g N/m^2)
+        REAL(C_DOUBLE) :: livecrootn_storage(0:mxpft)    ! live coarse root N storage (g N/m^2)
+        REAL(C_DOUBLE) :: livecrootn_xfer(0:mxpft)       ! live coarse root N transfer (g N/m^2)
+        REAL(C_DOUBLE) :: deadcrootn(0:mxpft)            ! dead coarse root N (g N/m^2)
+        REAL(C_DOUBLE) :: deadcrootn_storage(0:mxpft)    ! dead coarse root N storage (g N/m^2)
+        REAL(C_DOUBLE) :: deadcrootn_xfer(0:mxpft)       ! dead coarse root N transfer (g N/m^2)
+        REAL(C_DOUBLE) :: retransn(0:mxpft)              ! retranslocated N (g N/m^2)
+
+        REAL(C_DOUBLE) :: npool(0:mxpft)                 ! temporary photosynthate N pool (g N/m^2)
+        REAL(C_DOUBLE) :: pft_ntrunc(0:mxpft)            ! PFT-level sink for N truncation (g N/m^2)
+        ! column (band) physical state
+        REAL(C_DOUBLE) :: decl                      ! solar declination angle (radians)
+        REAL(C_DOUBLE) :: fpi                       ! fraction of potential immobilization
+        REAL(C_DOUBLE) :: fpg                       ! fraction of potential GPP
+        REAL(C_DOUBLE) :: annsum_counter            ! seconds since last ann accumulation turnover
+        REAL(C_DOUBLE) :: cannsum_npp               ! annual sum of NPP, averaged from PFT-level (g C/m^2/yr)
+        REAL(C_DOUBLE) :: cannavg_t2m               ! annual avg. of 2-m air temperature, averaged from PFT-level (K)
+        REAL(C_DOUBLE) :: watfc(max_nodes)                  ! volumetric soil water at field capacity
+        REAL(C_DOUBLE) :: me                        ! moisture of extinction
+        REAL(C_DOUBLE) :: fire_prob                 ! daily fire probability
+        REAL(C_DOUBLE) :: mean_fire_prob            ! e-folding mean of daily fire prob.
+        REAL(C_DOUBLE) :: fireseasonl               ! annual fire season length (days)
+        REAL(C_DOUBLE) :: farea_burned              ! timestep fractional area burned
+        REAL(C_DOUBLE) :: ann_farea_burned          ! annual total fract. area burned
+        REAL(C_DOUBLE) :: hr                        ! heterotrophic respiration (g C/m^2/s)
+   	REAL(C_DOUBLE) :: lithr                     ! litter heterotrophic resp. (g C/m^2/s)
+        REAL(C_DOUBLE) :: nee                       ! net ecosystem exchange (g C/m^2/s)
+        REAL(C_DOUBLE) :: nep                       ! net ecosystem production (g C/m^2/s)
+        ! column (band) carbon state
+        REAL(C_DOUBLE) :: cwdc                      ! coarse woody debris C (g C/m^2)
+        REAL(C_DOUBLE) :: litr1c                    ! litter labile C (g C/m^2)
+        REAL(C_DOUBLE) :: litr2c                    ! litter cellulose C (g C/m^2)
+        REAL(C_DOUBLE) :: litr3c                    ! litter lignin C (g C/m^2)
+        REAL(C_DOUBLE) :: soil1c                    ! fastest soil organic matter C
+        REAL(C_DOUBLE) :: soil2c                    ! medium soil organic matter C
+        REAL(C_DOUBLE) :: soil3c                    ! slow soil organic matter C
+        REAL(C_DOUBLE) :: soil4c                    ! slowest soil organic matter C
+        REAL(C_DOUBLE) :: seedc                     ! column-lev pool for seeding new PFTs
+        REAL(C_DOUBLE) :: col_ctrunc                ! column-lev sink for C truncation
+        REAL(C_DOUBLE) :: totlitc                   ! total litter C (g C/m^2)
+        REAL(C_DOUBLE) :: totsomc                   ! total soil organic C (g C/m^2)
+        REAL(C_DOUBLE) :: totcolc                   ! total column C (g C/m^2)
+        REAL(C_DOUBLE) :: prod10c                   ! wood product C pool, 10-yr lifespan (g C/m^2)
+        REAL(C_DOUBLE) :: prod100c                  ! wood product C pool, 100-yr lifespan (g C/m^2)
+        ! column (band) nitrogen state
+        REAL(C_DOUBLE) :: cwdn                      ! coarse woody debris N (g N/m^2)
+        REAL(C_DOUBLE) :: litr1n                    ! litter labile N (g N/m^2)
+        REAL(C_DOUBLE) :: litr2n                    ! litter cellulose N (g N/m^2)
+        REAL(C_DOUBLE) :: litr3n                    ! litter lignin N (g N/m^2)
+        REAL(C_DOUBLE) :: soil1n                    ! fastest soil organic matter N
+        REAL(C_DOUBLE) :: soil2n                    ! medium soil organic matter N
+        REAL(C_DOUBLE) :: soil3n                    ! slow soil organic matter N
+        REAL(C_DOUBLE) :: soil4n                    ! slowest soil organic matter N
+        REAL(C_DOUBLE) :: sminn                     ! soil mineral N (g N/m^2)
+        REAL(C_DOUBLE) :: seedn                     ! column-lev pool for seeding new PFTs
+        REAL(C_DOUBLE) :: col_ntrunc                ! column-lev sink for N truncation
+        REAL(C_DOUBLE) :: totcoln                   ! total column N (g N/m^2)
+        REAL(C_DOUBLE) :: prod10n                   ! wood product N pool, 10-yr lifespan (g N/m^2)
+        REAL(C_DOUBLE) :: prod100n                  ! wood product N pool, 100-yr lifespan (g N/m^2)
+    END TYPE vic_cn_data_type
+
+   type(c_ptr), value :: vic_cn
+   type(vic_cn_data_type), dimension(:), pointer :: cn
 
    real(r8), pointer :: z(:,:)          ! layer depth (m)
    real(r8), pointer :: dz(:,:)         ! layer thickness (m)
@@ -317,6 +309,8 @@
    real(r8), pointer :: gpp(:)          ! GPP
    real(r8), pointer :: npp(:)          ! NPP
    real(r8), pointer :: fpsn(:)         ! photosynthesis
+   real(r8), pointer :: psnsun(:)       ! sunlit photosynthesis
+   real(r8), pointer :: psnsha(:)       ! shaded photosynthesis
    real(r8), pointer :: leaf_mr(:)      ! leaf maintenance respiration
    real(r8), pointer :: mr(:)           ! maintenance respiration
    real(r8), pointer :: gr(:)           ! growth respiration
@@ -473,6 +467,8 @@
    real(r8) :: delta1                    ! declination angle (radians)
    real(r8) :: eccf1                     ! Earth-sun distance factor
 
+   call c_f_pointer(vic_cn, cn, [max_bands])
+
    ! Assign local pointers to derived type arrays
    ncol       => clm3%g%c%p%column
    ivt        => clm3%g%c%p%itype
@@ -534,6 +530,9 @@
    albgrd     => clm3%g%c%cps%albgrd
    albgri     => clm3%g%c%cps%albgri
    decl       => clm3%g%c%cps%decl
+   fpsn       => clm3%g%c%p%pcf%fpsn
+   psnsun     => clm3%g%c%p%pcf%psnsun
+   psnsha     => clm3%g%c%p%pcf%psnsha
 
    ! Assign VIC data to local pointers
 
@@ -574,13 +573,14 @@
 
    ! Added by MAB, 8/29/13
 
-     forc_t(g) = tair + 273.16
-     forc_q(g) = 0.622_r8 * vp / psfc
-     forc_vp(g) = vp
-     vg = vp + vpd
+     forc_t(g) = cn(1)%tair + 273.16
+     forc_q(g) = 0.622_r8 * cn(1)%vp / cn(1)%psfc
+     forc_vp(g) = cn(1)%vp
+     vg = cn(1)%vp + cn(1)%vpd
      do c = begc, endc
-       qg((g - 1) * endc + c) = 0.622_r8 * vg / psfc
+       qg((g - 1) * endc + c) = 0.622_r8 * vg / cn(1)%psfc
      end do
+!	print *, cn(1)%tair, cn(1)%vp, cn(1)%vpd, cn(1)%psfc
 
    ! Added by MAB, 10/11/13
 
@@ -590,74 +590,88 @@
 
    ! Added by MAB, 8/14/13
 
-     forc_pbot(g) = psfc
-     forc_pco2(g) = psfc * 3.8e-4
-     forc_po2(g) = psfc * 0.2095
-     forc_lwrad(g) = lwrad
-     forc_solar(g) = swrad
+     forc_pbot(g) = cn(1)%psfc
+     forc_pco2(g) = cn(1)%psfc * 3.8e-4
+     forc_po2(g) = cn(1)%psfc * 0.2095
+     forc_lwrad(g) = cn(1)%lwrad
+     forc_solar(g) = cn(1)%swrad
      do r = 1, numrad
-       forc_solad(g,r) = swrd(r)
-       forc_solai(g,r) = swri(r)
+       forc_solad(g,r) = cn(1)%swrd(r)
+       forc_solai(g,r) = cn(1)%swri(r)
      end do
+!	print *, cn(1)%lwrad, cn(1)%swrad, cn(1)%swrd, cn(1)%swri
 
    do c = begc, endc
 
-     qflx_drain((g - 1) * endc + c) = baseflow(c)
-     snowdp((g - 1) * endc + c) = snodep(c)
+     qflx_drain((g - 1) * endc + c) = cn(c)%baseflow
+     snowdp((g - 1) * endc + c) = cn(c)%snowdep
 
      ! Added by MAB, 10/11/13
      if(snowdp((g - 1) * endc + c) .gt. 0.) then
-       z0mg((g - 1) * endc + c) = zos
+       z0mg((g - 1) * endc + c) = cn(c)%z0s
      else
-       z0mg((g - 1) * endc + c) = zo
+       z0mg((g - 1) * endc + c) = cn(c)%z0
      end if
      z0hg((g - 1) * endc + c) = z0mv(c)
      z0qg((g - 1) * endc + c) = z0mv(c)
 
      do r = 1, numrad
-       albgrd((g - 1) * endc + c,r) = alb(c)
-       albgri((g - 1) * endc + c,r) = alb(c)
+       albgrd((g - 1) * endc + c,r) = cn(1)%alb
+       albgri((g - 1) * endc + c,r) = cn(1)%alb
      end do
+!	print *, cn(1)%baseflow, cn(1)%snowdep, cn(1)%z0s, cn(1)%z0, cn(1)%alb
 
      do k = -nlevsno + 1, nlevgrnd  ! -nlevsno+1:nlevgrnd
-         z((g - 1) * endc + c,k) = dep(k + nlevsno, c)
-         dz((g - 1) * endc + c,k) = thick(k + nlevsno, c)
-         h2osoi_liq((g - 1) * endc + c,k) = moist(k + nlevsno,c)
-         h2osoi_ice((g - 1) * endc + c,k) = ice(k + nlevsno, c)
-         t_soisno((g - 1) * endc + c,k) = tsoisno(k + nlevsno,c) + &
+         z((g - 1) * endc + c,k) = cn(c)%z(k + nlevsno)
+         dz((g - 1) * endc + c,k) = cn(c)%dz(k + nlevsno)
+         h2osoi_liq((g - 1) * endc + c,k) = cn(c)%moist(k + nlevsno)
+         h2osoi_ice((g - 1) * endc + c,k) = cn(c)%ice(k + nlevsno)
+         t_soisno((g - 1) * endc + c,k) = cn(c)%t_soisno(k + nlevsno) + &
 		SHR_CONST_TKFRZ
      end do
 
      do k = 1, nlevgrnd
-         bsw((g - 1) * endc + c,k) = coeff(k,c,1)
-         sucsat((g - 1) * endc + c,k) = satpsi(k,c,1)
-         bsw2((g - 1) * endc + c,k) = coeff(k,c,2)
-         psisat((g - 1) * endc + c,k) = satpsi(k,c,2)
-         soilpsi((g - 1) * endc + c,k) = soipsi(k,c,2)
-         watfc((g - 1) * endc + c,k) = fldcapwat(k,c)
+         bsw((g - 1) * endc + c,k) = cn(c)%bsw(1,k)
+         sucsat((g - 1) * endc + c,k) = cn(c)%sucsat(1,k)
+         bsw2((g - 1) * endc + c,k) = cn(c)%bsw(2,k)
+         psisat((g - 1) * endc + c,k) = cn(c)%sucsat(2,k)
+         soilpsi((g - 1) * endc + c,k) = cn(c)%soisuc(2,k)
+         watfc((g - 1) * endc + c,k) = cn(c)%watfc(k)
      end do
 
      ! How to find the right p's for g != 1?  (g - 1) * endc * endp?
 
      do p = begp, endp
-         t_ref2m((g - 1) * endc * endp + (c - 1) * endp + p) = t2m(p) + 273.16
+         t_ref2m((g - 1) * endc * endp + (c - 1) * endp + p) = cn(1)%t2m(ivt(p)) + 273.16
          do k = 1, nlevgrnd
-           rootfr((g - 1) * endc * endp + (c - 1) * endp + p,k) = rootf(k,p,c)
+           rootfr((g - 1) * endc * endp + (c - 1) * endp + p,k) = cn(c)%rootfr(k,ivt(p))
          end do
-         t_veg((g - 1) * endc * endp + (c - 1) * endp + p) = tveg(ivt(p),c) + &
+         t_veg((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%Tveg(ivt(p)) + &
 		273.16
-         fwet((g - 1) * endc * endp + (c - 1) * endp + p) = fvegwet(ivt(p),c)
-         rb((g - 1) * endc * endp + (c - 1) * endp + p) = rveg(ivt(p),c)
+         fwet((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%fwet(ivt(p))
+         rb((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%rveg(ivt(p))
+
+         ! Divide up photosynthesis, all photosynthesis goes to sunlit leaves
+         ! for now, added by MAB, 12/10/14
+!         fpsn((g - 1) * endc * endp + (c - 1) * endp + p) = &
+!		photosynth(ivt(p),c)
+!         psnsun((g - 1) * endc * endp + (c - 1) * endp + p) = &
+!		photosynth(ivt(p),c)
+!         psnsha((g - 1) * endc * endp + (c - 1) * endp + p) = 0._r8
+!         print *, c, p, fpsn((g - 1) * endc * endp + (c - 1) * endp + p), &
+!		psnsun((g - 1) * endc * endp + (c - 1) * endp + p), &
+!		psnsha((g - 1) * endc * endp + (c - 1) * endp + p)
 
          ! Added by MAB, 10/11/13
 !         if(rec == 0 .and. nspinup == 0) then
          if(rec == 0) then
-           tlai((g - 1) * endc * endp + (c - 1) * endp + p) = lai(ivt(p),c)
+           tlai((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%LAI(ivt(p))
          end if
-         displa((g - 1) * endc * endp + (c - 1) * endp + p) = displ(ivt(p),c)
-         z0mv((g - 1) * endc * endp + (c - 1) * endp + p) = zov(ivt(p),c)
-         z0hv((g - 1) * endc * endp + (c - 1) * endp + p) = zov(ivt(p),c)
-         z0qv((g - 1) * endc * endp + (c - 1) * endp + p) = zov(ivt(p),c)
+         displa((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%displ(ivt(p))
+         z0mv((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%zov(ivt(p))
+         z0hv((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%zov(ivt(p))
+         z0qv((g - 1) * endc * endp + (c - 1) * endp + p) = cn(c)%zov(ivt(p))
+!	print *, p, ivt(p), cn(c)%LAI(ivt(p)), cn(c)%displ(ivt(p)), cn(c)%zov(ivt(p))
          if(frac_veg_nosno((g - 1) * endc * endp + (c - 1) * endp + p) == 0) &
 		then
            forc_hgt_u_pft((g - 1) * endc * endp + (c - 1) * endp + p) = &
@@ -733,6 +747,9 @@
    gpp => clm3%g%c%p%pcf%gpp
    npp => clm3%g%c%p%pcf%npp
    ar => clm3%g%c%p%pcf%ar
+   gr => clm3%g%c%p%pcf%gr
+   mr => clm3%g%c%p%pcf%mr
+   leaf_mr => clm3%g%c%p%pcf%leaf_mr
    hr => clm3%g%c%ccf%hr
    nee => clm3%g%c%ccf%nee
    nep => clm3%g%c%ccf%nep
@@ -808,7 +825,7 @@
    retransn => clm3%g%c%p%pns%retransn
    npool => clm3%g%c%p%pns%npool
    pft_ntrunc => clm3%g%c%p%pns%pft_ntrunc
-   decl => clm3%g%c%cps%decl
+!   decl => clm3%g%c%cps%decl
    fpi => clm3%g%c%cps%fpi
    fpg => clm3%g%c%cps%fpg
    annsum_counter => clm3%g%c%cps%annsum_counter
@@ -834,146 +851,150 @@
    if(rec .eq. 0 .and. init_state .eq. 1) then
 
     do c = begc, endc
-     soil1c(c) = soilcfast(c)
-     soil2c(c) = soilcmid(c)
-     soil3c(c) = soilcslo1(c)
-     soil4c(c) = soilcslo2(c)
-     litr1c(c) = litrlabc(c)
-     litr2c(c) = litrcellc(c)
-     litr3c(c) = litrligc(c)
-     cwdc(c) = cwoodc(c)
-     totlitc(c) = litctot(c)
-     totsomc(c) = somctot(c)
-     soil1n(c) = soilnfast(c)
-     soil2n(c) = soilnmid(c)
-     soil3n(c) = soilnslo1(c)
-     soil4n(c) = soilnslo2(c)
-     sminn(c) = soilminn(c)
-     litr1n(c) = litrlabn(c)
-     litr2n(c) = litrcelln(c)
-     litr3n(c) = litrlign(c)
-     cwdn(c) = cwoodn(c)
-     hr(c) = heteroresp(c)
-     nee(c) = ecoexchn(c)
-     nep(c) = prodecon(c)
-     decl(c) = declin(c)
-     fpi(c) = potimmobfract(c)
-     fpg(c) = potgppfract(c)
-     annsum_counter(c) = annsumcount(c)
-     cannsum_npp(c) = colannsumnpp(c)
-     cannsum_t2m(c) = colannsumt2m(c)
+     soil1c(c) = cn(c)%soil1c
+     soil2c(c) = cn(c)%soil2c
+     soil3c(c) = cn(c)%soil3c
+     soil4c(c) = cn(c)%soil4c
+     litr1c(c) = cn(c)%litr1c
+     litr2c(c) = cn(c)%litr2c
+     litr3c(c) = cn(c)%litr3c
+     cwdc(c) = cn(c)%cwdc
+     totlitc(c) = cn(c)%totlitc
+     totsomc(c) = cn(c)%totsomc
+     soil1n(c) = cn(c)%soil1n
+     soil2n(c) = cn(c)%soil2n
+     soil3n(c) = cn(c)%soil3n
+     soil4n(c) = cn(c)%soil4n
+     sminn(c) = cn(c)%sminn
+     litr1n(c) = cn(c)%litr1n
+     litr2n(c) = cn(c)%litr2n
+     litr3n(c) = cn(c)%litr3n
+     cwdn(c) = cn(c)%cwdn
+     hr(c) = cn(c)%hr
+     nee(c) = cn(c)%nee
+     nep(c) = cn(c)%nep
+!     decl(c) = cn(c)%decl
+     fpi(c) = cn(c)%fpi
+     fpg(c) = cn(c)%fpg
+     annsum_counter(c) = cn(c)%annsum_counter
+     cannsum_npp(c) = cn(c)%cannsum_npp
+     cannsum_t2m(c) = cn(c)%cannavg_t2m
      do k = 1, nlevgrnd
-       watfc(c,k) = fldcapwat(k,c)
+       watfc(c,k) = cn(c)%watfc(k)
      end do
-     me(c) = extinctmoist(c)
-     fire_prob(c) = fireprob(c)
-     mean_fire_prob(c) = meanfireprob(c)
-     fireseasonl(c) = fireseasnlen(c)
-     farea_burned(c) = areafractburn(c)
-     ann_farea_burned(c) = annareafractburn(c)
-     seedc(c) = seedcc(c)
-     col_ctrunc(c) = colctrunc(c)
-     totcolc(c) = colctot(c)
-     prod10c(c) = woodprodc10(c)
-     prod100c(c) = woodprodc100(c)
-     seedn(c) = seednn(c)
-     col_ntrunc(c) = colntrunc(c)
-     totcoln(c) = colntot(c)
-     prod10n(c) = woodprodn10(c)
-     prod100n(c) = woodprodn100(c)
-    end do
+     me(c) = cn(c)%me
+     fire_prob(c) = cn(c)%fire_prob
+     mean_fire_prob(c) = cn(c)%mean_fire_prob
+     fireseasonl(c) = cn(c)%fireseasonl
+     farea_burned(c) = cn(c)%farea_burned
+     ann_farea_burned(c) = cn(c)%ann_farea_burned
+     seedc(c) = cn(c)%seedc
+     col_ctrunc(c) = cn(c)%col_ctrunc
+     totcolc(c) = cn(c)%totcolc
+     prod10c(c) = cn(c)%prod10c
+     prod100c(c) = cn(c)%prod100c
+     seedn(c) = cn(c)%seedn
+     col_ntrunc(c) = cn(c)%col_ntrunc
+     totcoln(c) = cn(c)%totcoln
+     prod10n(c) = cn(c)%prod10n
+     prod100n(c) = cn(c)%prod100n
+   end do
 
-    do p = begp, endp
+   do p = begp, endp
      c = ncol(p)
-       elai(p) = lai(ivt(p),c)
-       leafc(p) = leafcc(ivt(p),c)
-       frootc(p) = finrtc(ivt(p),c)
-       livestemc(p) = livstemc(ivt(p),c)
-       deadstemc(p) = deadstemcc(ivt(p),c)
-       livecrootc(p) = livcorsrtc(ivt(p),c)
-       deadcrootc(p) = deadcorsrtc(ivt(p),c)
-       woodc(p) = woodcc(ivt(p),c)
-       totvegc(p) = vegctot(ivt(p),c)
-       leafn(p) = leafnn(ivt(p),c)
-       frootn(p) = finrtn(ivt(p),c)
-       livestemn(p) = livstemn(ivt(p),c)
-       deadstemn(p) = deadstemnn(ivt(p),c)
-       livecrootn(p) = livcorsrtn(ivt(p),c)
-       deadcrootn(p) = deadcorsrtn(ivt(p),c)
-       gpp2(p) = prod1gb4(ivt(p),c)
-       gpp(p) = prod1g(ivt(p),c)
-       npp(p) = prod1n(ivt(p),c)
-       ar(p) = autoresp(ivt(p),c)
-       dormant_flag(p) = dormancy(ivt(p),c)
-       days_active(p) = ndaysact(ivt(p),c)
-       onset_flag(p) = onsetflg(ivt(p),c)
-       onset_counter(p) = onsetcount(ivt(p),c)
-       onset_gddflag(p) = onsetgddflg(ivt(p),c)
-       onset_fdd(p) = onsetfdd(ivt(p),c)
-       onset_gdd(p) = onsetgdd(ivt(p),c)
-       onset_swi(p) = onsetswi(ivt(p),c)
-       offset_flag(p) = offsetflg(ivt(p),c)
-       offset_counter(p) = offsetcount(ivt(p),c)
-       offset_fdd(p) = offsetfdd(ivt(p),c)
-       offset_swi(p) = offsetswi(ivt(p),c)
-       lgsf(p) = lgsfact(ivt(p),c)
-       bglfr(p) = backlfr(ivt(p),c)
-       bgtr(p) = backtgr(ivt(p),c)
-       dayl(p) = daylen(ivt(p),c)
-       prev_dayl(p) = prevdaylen(ivt(p),c)
-       annavg_t2m(p) = annavgt2m(ivt(p),c)
-       tempavg_t2m(p) = tempavgt2m(ivt(p),c)
-       availc(p) = cavail(ivt(p),c)
-       xsmrpool_recover(p) = cflxrecov(ivt(p),c)
-       alloc_pnow(p) = allocpnow(ivt(p),c)
-       c_allometry(p) = callom(ivt(p),c)
-       n_allometry(p) = nallom(ivt(p),c)
-       plant_ndemand(p) = plantndem(ivt(p),c)
-       tempsum_potential_gpp(p) = tempsumpotgpp(ivt(p),c)
-       annsum_potential_gpp(p) = annsumpotgpp(ivt(p),c)
-       tempmax_retransn(p) = tempmxretransn(ivt(p),c)
-       annmax_retransn(p) = annmxretransn(ivt(p),c)
-       avail_retransn(p) = availretransn(ivt(p),c)
-       plant_nalloc(p) = plantnalloc(ivt(p),c)
-       plant_calloc(p) = plantcalloc(ivt(p),c)
-       excess_cflux(p) = cflxex(ivt(p),c)
-       downreg(p) = dwnreg(ivt(p),c)
-       prev_leafc_to_litter(p) = prevleafc2litr(ivt(p),c)
-       prev_frootc_to_litter(p) = prevfinrtc2litr(ivt(p),c)
-       tempsum_npp(p) = tempsumnpp(ivt(p),c)
-       annsum_npp(p) = annsumnpp(ivt(p),c)
-       leafc_storage(p) = leafcstor(ivt(p),c)
-       leafc_xfer(p) = leafctrans(ivt(p),c)
-       frootc_storage(p) = finrtcstor(ivt(p),c)
-       frootc_xfer(p) = finrtctrans(ivt(p),c)
-       livestemc_storage(p) = livstemcstor(ivt(p),c)
-       livestemc_xfer(p) = livstemctrans(ivt(p),c)
-       deadstemc_storage(p) = deadstemcstor(ivt(p),c)
-       deadstemc_xfer(p) = deadstemctrans(ivt(p),c)
-       livecrootc_storage(p) = livcorsrtcstor(ivt(p),c)
-       livecrootc_xfer(p) = livcorsrtctrans(ivt(p),c)
-       deadcrootc_storage(p) = deadcorsrtcstor(ivt(p),c)
-       deadcrootc_xfer(p) = deadcorsrtctrans(ivt(p),c)
-       gresp_storage(p) = grorespstor(ivt(p),c)
-       gresp_xfer(p) = groresptrans(ivt(p),c)
-       cpool(p) = photocpool(ivt(p),c)
-       xsmrpool(p) = mrcpool(ivt(p),c)
-       pft_ctrunc(p) = ctruncpft(ivt(p),c)
-       leafn_storage(p) = leafnstor(ivt(p),c)
-       leafn_xfer(p) = leafntrans(ivt(p),c)
-       frootn_storage(p) = finrtnstor(ivt(p),c)
-       frootn_xfer(p) = finrtntrans(ivt(p),c)
-       livestemn_storage(p) = livstemnstor(ivt(p),c)
-       livestemn_xfer(p) = livstemntrans(ivt(p),c)
-       deadstemn_storage(p) = deadstemnstor(ivt(p),c)
-       deadstemn_xfer(p) = deadstemntrans(ivt(p),c)
-       livecrootn_storage(p) = livcorsrtnstor(ivt(p),c)
-       livecrootn_xfer(p) = livcorsrtntrans(ivt(p),c)
-       deadcrootn_storage(p) = deadcorsrtnstor(ivt(p),c)
-       deadcrootn_xfer(p) = deadcorsrtntrans(ivt(p),c)
-       retransn(p) = nretrans(ivt(p),c)
-       npool(p) = photonpool(ivt(p),c)
-       pft_ntrunc(p) = ntruncpft(ivt(p),c)
+       elai(p) = cn(c)%LAI(ivt(p))
+       leafc(p) = cn(c)%leafc(ivt(p))
+       frootc(p) = cn(c)%frootc(ivt(p))
+       livestemc(p) = cn(c)%livestemc(ivt(p))
+       deadstemc(p) = cn(c)%deadstemc(ivt(p))
+       livecrootc(p) = cn(c)%livecrootc(ivt(p))
+       deadcrootc(p) = cn(c)%deadcrootc(ivt(p))
+       woodc(p) = cn(c)%woodc(ivt(p))
+       totvegc(p) = cn(c)%totvegc(ivt(p))
+       leafn(p) = cn(c)%leafn(ivt(p))
+       frootn(p) = cn(c)%frootn(ivt(p))
+       livestemn(p) = cn(c)%livestemn(ivt(p))
+       deadstemn(p) = cn(c)%deadstemn(ivt(p))
+       livecrootn(p) = cn(c)%livecrootn(ivt(p))
+       deadcrootn(p) = cn(c)%deadcrootn(ivt(p))
+       gpp2(p) = cn(c)%gpp2(ivt(p))
+       gpp(p) = cn(c)%gpp(ivt(p))
+       npp(p) = cn(c)%npp(ivt(p))
+       ar(p) = cn(c)%ar(ivt(p))
+       gr(p) = cn(c)%gr(ivt(p))
+       mr(p) = cn(c)%mr(ivt(p))
+       leaf_mr(p) = cn(c)%leaf_mr(ivt(p))
+       dormant_flag(p) = cn(c)%dormant_flag(ivt(p))
+       days_active(p) = cn(c)%days_active(ivt(p))
+       onset_flag(p) = cn(c)%onset_flag(ivt(p))
+       onset_counter(p) = cn(c)%onset_counter(ivt(p))
+       onset_gddflag(p) = cn(c)%onset_gddflag(ivt(p))
+       onset_fdd(p) = cn(c)%onset_fdd(ivt(p))
+       onset_gdd(p) = cn(c)%onset_gdd(ivt(p))
+       onset_swi(p) = cn(c)%onset_swi(ivt(p))
+       offset_flag(p) = cn(c)%offset_flag(ivt(p))
+       offset_counter(p) = cn(c)%offset_counter(ivt(p))
+       offset_fdd(p) = cn(c)%offset_fdd(ivt(p))
+       offset_swi(p) = cn(c)%offset_swi(ivt(p))
+       lgsf(p) = cn(c)%lgsf(ivt(p))
+       bglfr(p) = cn(c)%bglfr(ivt(p))
+       bgtr(p) = cn(c)%bgtr(ivt(p))
+       dayl(p) = cn(c)%dayl(ivt(p))
+       prev_dayl(p) = cn(c)%prev_dayl(ivt(p))
+       annavg_t2m(p) = cn(c)%annavg_t2m(ivt(p))
+       tempavg_t2m(p) = cn(c)%tempavg_t2m(ivt(p))
+       availc(p) = cn(c)%availc(ivt(p))
+       xsmrpool_recover(p) = cn(c)%xsmrpool_recover(ivt(p))
+       alloc_pnow(p) = cn(c)%alloc_pnow(ivt(p))
+       c_allometry(p) = cn(c)%c_allometry(ivt(p))
+       n_allometry(p) = cn(c)%n_allometry(ivt(p))
+       plant_ndemand(p) = cn(c)%plant_ndemand(ivt(p))
+       tempsum_potential_gpp(p) = cn(c)%tempsum_potential_gpp(ivt(p))
+       annsum_potential_gpp(p) = cn(c)%annsum_potential_gpp(ivt(p))
+       tempmax_retransn(p) = cn(c)%tempmax_retransn(ivt(p))
+       annmax_retransn(p) = cn(c)%annmax_retransn(ivt(p))
+       avail_retransn(p) = cn(c)%avail_retransn(ivt(p))
+       plant_nalloc(p) = cn(c)%plant_nalloc(ivt(p))
+       plant_calloc(p) = cn(c)%plant_calloc(ivt(p))
+       excess_cflux(p) = cn(c)%excess_cflux(ivt(p))
+       downreg(p) = cn(c)%downreg(ivt(p))
+       prev_leafc_to_litter(p) = cn(c)%prev_leafc_to_litter(ivt(p))
+       prev_frootc_to_litter(p) = cn(c)%prev_frootc_to_litter(ivt(p))
+       tempsum_npp(p) = cn(c)%tempsum_npp(ivt(p))
+       annsum_npp(p) = cn(c)%annsum_npp(ivt(p))
+       leafc_storage(p) = cn(c)%leafc_storage(ivt(p))
+       leafc_xfer(p) = cn(c)%leafc_xfer(ivt(p))
+       frootc_storage(p) = cn(c)%frootc_storage(ivt(p))
+       frootc_xfer(p) = cn(c)%frootc_xfer(ivt(p))
+       livestemc_storage(p) = cn(c)%livestemc_storage(ivt(p))
+       livestemc_xfer(p) = cn(c)%livestemc_xfer(ivt(p))
+       deadstemc_storage(p) = cn(c)%deadstemc_storage(ivt(p))
+       deadstemc_xfer(p) = cn(c)%deadstemc_xfer(ivt(p))
+       livecrootc_storage(p) = cn(c)%livecrootc_storage(ivt(p))
+       livecrootc_xfer(p) = cn(c)%livecrootc_xfer(ivt(p))
+       deadcrootc_storage(p) = cn(c)%deadcrootc_storage(ivt(p))
+       deadcrootc_xfer(p) = cn(c)%deadcrootc_xfer(ivt(p))
+       gresp_storage(p) = cn(c)%gresp_storage(ivt(p))
+       gresp_xfer(p) = cn(c)%gresp_xfer(ivt(p))
+       cpool(p) = cn(c)%cpool(ivt(p))
+       xsmrpool(p) = cn(c)%xsmrpool(ivt(p))
+       pft_ctrunc(p) = cn(c)%pft_ctrunc(ivt(p))
+       leafn_storage(p) = cn(c)%leafn_storage(ivt(p))
+       leafn_xfer(p) = cn(c)%leafn_xfer(ivt(p))
+       frootn_storage(p) = cn(c)%frootn_storage(ivt(p))
+       frootn_xfer(p) = cn(c)%frootn_xfer(ivt(p))
+       livestemn_storage(p) = cn(c)%livestemn_storage(ivt(p))
+       livestemn_xfer(p) = cn(c)%livestemn_xfer(ivt(p))
+       deadstemn_storage(p) = cn(c)%deadstemn_storage(ivt(p))
+       deadstemn_xfer(p) = cn(c)%deadstemn_xfer(ivt(p))
+       livecrootn_storage(p) = cn(c)%livecrootn_storage(ivt(p))
+       livecrootn_xfer(p) = cn(c)%livecrootn_xfer(ivt(p))
+       deadcrootn_storage(p) = cn(c)%deadcrootn_storage(ivt(p))
+       deadcrootn_xfer(p) = cn(c)%deadcrootn_xfer(ivt(p))
+       retransn(p) = cn(c)%retransn(ivt(p))
+       npool(p) = cn(c)%npool(ivt(p))
+       pft_ntrunc(p) = cn(c)%pft_ntrunc(ivt(p))
+	print *, init_state, cn(c)%leafc(ivt(p))
     end do
    end if
 
@@ -1132,7 +1153,6 @@
    prod10n => clm3%g%c%cns%prod10n
    prod100n => clm3%g%c%cns%prod100n
    litfall => clm3%g%c%p%pcf%litfall
-   fpsn => clm3%g%c%p%pcf%fpsn
    cisun => clm3%g%c%p%pps%cisun
    cisha => clm3%g%c%p%pps%cisha
    rssun => clm3%g%c%p%pps%rssun
@@ -1143,155 +1163,156 @@
    laisha => clm3%g%c%p%pps%laisha
 
    do c = begc, endc
-     soilcfast(c) = soil1c(c)
-     soilcmid(c) = soil2c(c)
-     soilcslo1(c) = soil3c(c)
-     soilcslo2(c) = soil4c(c)
-     litrlabc(c) = litr1c(c)
-     litrcellc(c) = litr2c(c)
-     litrligc(c) = litr3c(c)
-     cwoodc(c) = cwdc(c)
-     litctot(c) = totlitc(c)
-     somctot(c) = totsomc(c)
-     soilnfast(c) = soil1n(c)
-     soilnmid(c) = soil2n(c)
-     soilnslo1(c) = soil3n(c)
-     soilnslo2(c) = soil4n(c)
-     soilminn(c) = sminn(c)
-     litrlabn(c) = litr1n(c)
-     litrcelln(c) = litr2n(c)
-     litrlign(c) = litr3n(c)
-     cwoodn(c) = cwdn(c)
-     heteroresp(c) = hr(c)
-     litresp(c) = lithr(c)
-     ecoexchn(c) = nee(c)
-     prodecon(c) = nep(c)
-     declin(c) = decl(c)
-     potimmobfract(c) = fpi(c)
-     potgppfract(c) = fpg(c)
-     annsumcount(c) = annsum_counter(c)
-     colannsumnpp(c) = cannsum_npp(c)
-     colannsumt2m(c) = cannsum_t2m(c)
+     cn(c)%soil1c = soil1c(c)
+     cn(c)%soil2c = soil2c(c)
+     cn(c)%soil3c = soil3c(c)
+     cn(c)%soil4c = soil4c(c)
+     cn(c)%litr1c = litr1c(c)
+     cn(c)%litr2c = litr2c(c)
+     cn(c)%litr3c = litr3c(c)
+     cn(c)%cwdc = cwdc(c)
+     cn(c)%totlitc = totlitc(c)
+     cn(c)%totsomc = totsomc(c)
+     cn(c)%soil1n = soil1n(c)
+     cn(c)%soil2n = soil2n(c)
+     cn(c)%soil3n = soil3n(c)
+     cn(c)%soil4n = soil4n(c)
+     cn(c)%sminn = sminn(c)
+     cn(c)%litr1n = litr1n(c)
+     cn(c)%litr2n = litr2n(c)
+     cn(c)%litr3n = litr3n(c)
+     cn(c)%cwdn = cwdn(c)
+     cn(c)%hr = hr(c)
+     cn(c)%lithr = lithr(c)
+     cn(c)%nee = nee(c)
+     cn(c)%nep = nep(c)
+     cn(c)%decl = decl(c)
+     cn(c)%fpi = fpi(c)
+     cn(c)%fpg = fpg(c)
+     cn(c)%annsum_counter = annsum_counter(c)
+     cn(c)%cannsum_npp = cannsum_npp(c)
+     cn(c)%cannavg_t2m = cannsum_t2m(c)
      do k = 1, nlevgrnd
-       fldcapwat(k,c) = watfc(c,k)
+       cn(c)%watfc(k) = watfc(c,k)
      end do
-     extinctmoist(c) = me(c)
-     fireprob(c) = fire_prob(c)
-     meanfireprob(c) = mean_fire_prob(c)
-     fireseasnlen(c) = fireseasonl(c)
-     areafractburn(c) = farea_burned(c)
-     annareafractburn(c) = ann_farea_burned(c)
-     seedcc(c) = seedc(c)
-     colctrunc(c) = col_ctrunc(c)
-     colctot(c) = totcolc(c)
-     woodprodc10(c) = prod10c(c)
-     woodprodc100(c) = prod100c(c)
-     seednn(c) = seedn(c)
-     colntrunc(c) = col_ntrunc(c)
-     colntot(c) = totcoln(c)
-     woodprodn10(c) = prod10n(c)
-     woodprodn100(c) = prod100n(c)
+     cn(c)%me = me(c)
+     cn(c)%fire_prob = fire_prob(c)
+     cn(c)%mean_fire_prob = mean_fire_prob(c)
+     cn(c)%fireseasonl = fireseasonl(c)
+     cn(c)%farea_burned = farea_burned(c)
+     cn(c)%ann_farea_burned = ann_farea_burned(c)
+     cn(c)%seedc = seedc(c)
+     cn(c)%col_ctrunc = col_ctrunc(c)
+     cn(c)%totcolc = totcolc(c)
+     cn(c)%prod10c = prod10c(c)
+     cn(c)%prod100c = prod100c(c)
+     cn(c)%seedn = seedn(c)
+     cn(c)%col_ntrunc = col_ntrunc(c)
+     cn(c)%totcoln = totcoln(c)
+     cn(c)%prod10n = prod10n(c)
+     cn(c)%prod100n = prod100n(c)
+!	print *, c, cn(c)%totlitc, cn(c)%soil2c, cn(c)%soil3c, totlitc(c), soil2c(c), soil3c(c)
    end do
 
    do p = begp, endp
      c = ncol(p)
-       lai(ivt(p),c) = elai(p)
-       leafcc(ivt(p),c) = leafc(p)
-       finrtc(ivt(p),c) = frootc(p)
-       livstemc(ivt(p),c) = livestemc(p)
-       deadstemcc(ivt(p),c) = deadstemc(p)
-       livcorsrtc(ivt(p),c) = livecrootc(p)
-       deadcorsrtc(ivt(p),c) = deadcrootc(p)
-       woodcc(ivt(p),c) = woodc(p)
-       vegctot(ivt(p),c) = totvegc(p)
-       leafnn(ivt(p),c) = leafn(p)
-       finrtn(ivt(p),c) = frootn(p)
-       livstemn(ivt(p),c) = livestemn(p)
-       deadstemnn(ivt(p),c) = deadstemn(p)
-       livcorsrtn(ivt(p),c) = livecrootn(p)
-       deadcorsrtn(ivt(p),c) = deadcrootn(p)
-       prod1gb4(ivt(p),c) = gpp2(p)
-       prod1g(ivt(p),c) = gpp(p)
-       prod1n(ivt(p),c) = npp(p)
-       darkresp(ivt(p),c) = leaf_mr(p)
-       maintresp(ivt(p),c) = mr(p)
-       groresp(ivt(p),c) = gr(p)
-       autoresp(ivt(p),c) = ar(p)
-       dormancy(ivt(p),c) = dormant_flag(p)
-       ndaysact(ivt(p),c) = days_active(p)
-       onsetflg(ivt(p),c) = onset_flag(p)
-       onsetcount(ivt(p),c) = onset_counter(p)
-       onsetgddflg(ivt(p),c) = onset_gddflag(p)
-       onsetfdd(ivt(p),c) = onset_fdd(p)
-       onsetgdd(ivt(p),c) = onset_gdd(p)
-       onsetswi(ivt(p),c) = onset_swi(p)
-       offsetflg(ivt(p),c) = offset_flag(p)
-       offsetcount(ivt(p),c) = offset_counter(p)
-       offsetfdd(ivt(p),c) = offset_fdd(p)
-       offsetswi(ivt(p),c) = offset_swi(p)
-       lgsfact(ivt(p),c) = lgsf(p)
-       backlfr(ivt(p),c) = bglfr(p)
-       backtgr(ivt(p),c) = bgtr(p)
-       daylen(ivt(p),c) = dayl(p)
-       prevdaylen(ivt(p),c) = prev_dayl(p)
-       annavgt2m(ivt(p),c) = annavg_t2m(p)
-       tempavgt2m(ivt(p),c) = tempavg_t2m(p)
-       cavail(ivt(p),c) = availc(p)
-       cflxrecov(ivt(p),c) = xsmrpool_recover(p)
-       allocpnow(ivt(p),c) = alloc_pnow(p)
-       callom(ivt(p),c) = c_allometry(p)
-       nallom(ivt(p),c) = n_allometry(p)
-       plantndem(ivt(p),c) = plant_ndemand(p)
-       tempsumpotgpp(ivt(p),c) = tempsum_potential_gpp(p)
-       annsumpotgpp(ivt(p),c) = annsum_potential_gpp(p)
-       tempmxretransn(ivt(p),c) = tempmax_retransn(p)
-       annmxretransn(ivt(p),c) = annmax_retransn(p)
-       availretransn(ivt(p),c) = avail_retransn(p)
-       plantnalloc(ivt(p),c) = plant_nalloc(p)
-       plantcalloc(ivt(p),c) = plant_calloc(p)
-       cflxex(ivt(p),c) = excess_cflux(p)
-       dwnreg(ivt(p),c) = downreg(p)
-       prevleafc2litr(ivt(p),c) = prev_leafc_to_litter(p)
-       prevfinrtc2litr(ivt(p),c) = prev_frootc_to_litter(p)
-       tempsumnpp(ivt(p),c) = tempsum_npp(p)
-       annsumnpp(ivt(p),c) = annsum_npp(p)
-       leafcstor(ivt(p),c) = leafc_storage(p)
-       leafctrans(ivt(p),c) = leafc_xfer(p)
-       finrtcstor(ivt(p),c) = frootc_storage(p)
-       finrtctrans(ivt(p),c) = frootc_xfer(p)
-       livstemcstor(ivt(p),c) = livestemc_storage(p)
-       livstemctrans(ivt(p),c) = livestemc_xfer(p)
-       deadstemcstor(ivt(p),c) = deadstemc_storage(p)
-       deadstemctrans(ivt(p),c) = deadstemc_xfer(p)
-       livcorsrtcstor(ivt(p),c) = livecrootc_storage(p)
-       livcorsrtctrans(ivt(p),c) = livecrootc_xfer(p)
-       deadcorsrtcstor(ivt(p),c) = deadcrootc_storage(p)
-       deadcorsrtctrans(ivt(p),c) = deadcrootc_xfer(p)
-       grorespstor(ivt(p),c) = gresp_storage(p)
-       groresptrans(ivt(p),c) = gresp_xfer(p)
-       photocpool(ivt(p),c) = cpool(p)
-       mrcpool(ivt(p),c) = xsmrpool(p)
-       ctruncpft(ivt(p),c) = pft_ctrunc(p)
-       leafnstor(ivt(p),c) = leafn_storage(p)
-       leafntrans(ivt(p),c) = leafn_xfer(p)
-       finrtnstor(ivt(p),c) = frootn_storage(p)
-       finrtntrans(ivt(p),c) = frootn_xfer(p)
-       livstemnstor(ivt(p),c) = livestemn_storage(p)
-       livstemntrans(ivt(p),c) = livestemn_xfer(p)
-       deadstemnstor(ivt(p),c) = deadstemn_storage(p)
-       deadstemntrans(ivt(p),c) = deadstemn_xfer(p)
-       livcorsrtnstor(ivt(p),c) = livecrootn_storage(p)
-       livcorsrtntrans(ivt(p),c) = livecrootn_xfer(p)
-       deadcorsrtnstor(ivt(p),c) = deadcrootn_storage(p)
-       deadcorsrtntrans(ivt(p),c) = deadcrootn_xfer(p)
-       nretrans(ivt(p),c) = retransn(p)
-       photonpool(ivt(p),c) = npool(p)
-       ntruncpft(ivt(p),c) = pft_ntrunc(p)
-       litrfall(ivt(p),c) = litfall(p) * dt
-       photosynth(ivt(p),c) = fpsn(p)
-       intco2(ivt(p),c) = cisun(p) * laisun(p) + cisha(p) * laisha(p)
-       stomresist(ivt(p),c) = rssun(p) * laisun(p) + rssha(p) * laisha(p)
-       abspar(ivt(p),c) = parsun(p) * laisun(p) + parsha(p) * laisha(p)
+       cn(c)%LAI(ivt(p)) = elai(p)
+       cn(c)%leafc(ivt(p)) = leafc(p)
+       cn(c)%frootc(ivt(p)) = frootc(p)
+       cn(c)%livestemc(ivt(p)) = livestemc(p)
+       cn(c)%deadstemc(ivt(p)) = deadstemc(p)
+       cn(c)%livecrootc(ivt(p)) = livecrootc(p)
+       cn(c)%deadcrootc(ivt(p)) = deadcrootc(p)
+       cn(c)%woodc(ivt(p)) = woodc(p)
+       cn(c)%totvegc(ivt(p)) = totvegc(p)
+       cn(c)%leafn(ivt(p)) = leafn(p)
+       cn(c)%frootn(ivt(p)) = frootn(p)
+       cn(c)%livestemn(ivt(p)) = livestemn(p)
+       cn(c)%deadstemn(ivt(p)) = deadstemn(p)
+       cn(c)%livecrootn(ivt(p)) = livecrootn(p)
+       cn(c)%deadcrootn(ivt(p)) = deadcrootn(p)
+       cn(c)%gpp2(ivt(p)) = gpp2(p)
+       cn(c)%gpp(ivt(p)) = gpp(p)
+       cn(c)%npp(ivt(p)) = npp(p)
+       cn(c)%leaf_mr(ivt(p)) = leaf_mr(p)
+       cn(c)%mr(ivt(p)) = mr(p)
+       cn(c)%gr(ivt(p)) = gr(p)
+       cn(c)%ar(ivt(p)) = ar(p)
+       cn(c)%dormant_flag(ivt(p)) = dormant_flag(p)
+       cn(c)%days_active(ivt(p)) = days_active(p)
+       cn(c)%onset_flag(ivt(p)) = onset_flag(p)
+       cn(c)%onset_counter(ivt(p)) = onset_counter(p)
+       cn(c)%onset_gddflag(ivt(p)) = onset_gddflag(p)
+       cn(c)%onset_fdd(ivt(p)) = onset_fdd(p)
+       cn(c)%onset_gdd(ivt(p)) = onset_gdd(p)
+       cn(c)%onset_swi(ivt(p)) = onset_swi(p)
+       cn(c)%offset_flag(ivt(p)) = offset_flag(p)
+       cn(c)%offset_counter(ivt(p)) = offset_counter(p)
+       cn(c)%offset_fdd(ivt(p)) = offset_fdd(p)
+       cn(c)%offset_swi(ivt(p)) = offset_swi(p)
+       cn(c)%lgsf(ivt(p)) = lgsf(p)
+       cn(c)%bglfr(ivt(p)) = bglfr(p)
+       cn(c)%bgtr(ivt(p)) = bgtr(p)
+       cn(c)%dayl(ivt(p)) = dayl(p)
+       cn(c)%prev_dayl(ivt(p)) = prev_dayl(p)
+       cn(c)%annavg_t2m(ivt(p)) = annavg_t2m(p)
+       cn(c)%tempavg_t2m(ivt(p)) = tempavg_t2m(p)
+       cn(c)%availc(ivt(p)) = availc(p)
+       cn(c)%xsmrpool_recover(ivt(p)) = xsmrpool_recover(p)
+       cn(c)%alloc_pnow(ivt(p)) = alloc_pnow(p)
+       cn(c)%c_allometry(ivt(p)) = c_allometry(p)
+       cn(c)%n_allometry(ivt(p)) = n_allometry(p)
+       cn(c)%plant_ndemand(ivt(p)) = plant_ndemand(p)
+       cn(c)%tempsum_potential_gpp(ivt(p)) = tempsum_potential_gpp(p)
+       cn(c)%annsum_potential_gpp(ivt(p)) = annsum_potential_gpp(p)
+       cn(c)%tempmax_retransn(ivt(p)) = tempmax_retransn(p)
+       cn(c)%annmax_retransn(ivt(p)) = annmax_retransn(p)
+       cn(c)%avail_retransn(ivt(p)) = avail_retransn(p)
+       cn(c)%plant_nalloc(ivt(p)) = plant_nalloc(p)
+       cn(c)%plant_calloc(ivt(p)) = plant_calloc(p)
+       cn(c)%excess_cflux(ivt(p)) = excess_cflux(p)
+       cn(c)%downreg(ivt(p)) = downreg(p)
+       cn(c)%prev_leafc_to_litter(ivt(p)) = prev_leafc_to_litter(p)
+       cn(c)%prev_frootc_to_litter(ivt(p)) = prev_frootc_to_litter(p)
+       cn(c)%tempsum_npp(ivt(p)) = tempsum_npp(p)
+       cn(c)%annsum_npp(ivt(p)) = annsum_npp(p)
+       cn(c)%leafc_storage(ivt(p)) = leafc_storage(p)
+       cn(c)%leafc_xfer(ivt(p)) = leafc_xfer(p)
+       cn(c)%frootc_storage(ivt(p)) = frootc_storage(p)
+       cn(c)%frootc_xfer(ivt(p)) = frootc_xfer(p)
+       cn(c)%livestemc_storage(ivt(p)) = livestemc_storage(p)
+       cn(c)%livestemc_xfer(ivt(p)) = livestemc_xfer(p)
+       cn(c)%deadstemc_storage(ivt(p)) = deadstemc_storage(p)
+       cn(c)%deadstemc_xfer(ivt(p)) = deadstemc_xfer(p)
+       cn(c)%livecrootc_storage(ivt(p)) = livecrootc_storage(p)
+       cn(c)%livecrootc_xfer(ivt(p)) = livecrootc_xfer(p)
+       cn(c)%deadcrootc_storage(ivt(p)) = deadcrootc_storage(p)
+       cn(c)%deadcrootc_xfer(ivt(p)) = deadcrootc_xfer(p)
+       cn(c)%gresp_storage(ivt(p)) = gresp_storage(p)
+       cn(c)%gresp_xfer(ivt(p)) = gresp_xfer(p)
+       cn(c)%cpool(ivt(p)) = cpool(p)
+       cn(c)%xsmrpool(ivt(p)) = xsmrpool(p)
+       cn(c)%pft_ctrunc(ivt(p)) = pft_ctrunc(p)
+       cn(c)%leafn_storage(ivt(p)) = leafn_storage(p)
+       cn(c)%leafn_xfer(ivt(p)) = leafn_xfer(p)
+       cn(c)%frootn_storage(ivt(p)) = frootn_storage(p)
+       cn(c)%frootn_xfer(ivt(p)) = frootn_xfer(p)
+       cn(c)%livestemn_storage(ivt(p)) = livestemn_storage(p)
+       cn(c)%livestemn_xfer(ivt(p)) = livestemn_xfer(p)
+       cn(c)%deadstemn_storage(ivt(p)) = deadstemn_storage(p)
+       cn(c)%deadstemn_xfer(ivt(p)) = deadstemn_xfer(p)
+       cn(c)%livecrootn_storage(ivt(p)) = livecrootn_storage(p)
+       cn(c)%livecrootn_xfer(ivt(p)) = livecrootn_xfer(p)
+       cn(c)%deadcrootn_storage(ivt(p)) = deadcrootn_storage(p)
+       cn(c)%deadcrootn_xfer(ivt(p)) = deadcrootn_xfer(p)
+       cn(c)%retransn(ivt(p)) = retransn(p)
+       cn(c)%npool(ivt(p)) = npool(p)
+       cn(c)%pft_ntrunc(ivt(p)) = pft_ntrunc(p)
+       cn(c)%litfall(ivt(p)) = litfall(p) * dt
+       cn(c)%fpsn(ivt(p)) = fpsn(p)
+       cn(c)%ci(ivt(p)) = cisun(p) * laisun(p) + cisha(p) * laisha(p)
+       cn(c)%rs(ivt(p)) = rssun(p) * laisun(p) + rssha(p) * laisha(p)
+       cn(c)%par(ivt(p)) = parsun(p) * laisun(p) + parsha(p) * laisha(p)
    end do
 
 end subroutine vic2clmtype
