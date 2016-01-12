@@ -30,7 +30,12 @@
 // used for offsetof() macro
 #include <stddef.h>
 #include <mpi.h>
+#include <stdbool.h>
 
+// Component MPI Communicator
+MPI_Comm MPI_COMM_VIC;
+
+void create_MPI_domain_struct_type(MPI_Datatype *mpi_type);
 void create_MPI_global_struct_type(MPI_Datatype *mpi_type);
 void create_MPI_location_struct_type(MPI_Datatype *mpi_type);
 void create_MPI_nc_file_struct_type(MPI_Datatype *mpi_type);
@@ -49,11 +54,10 @@ void get_scatter_nc_field_float(char *nc_name, char *var_name, size_t *start,
                                 size_t *count, float *var);
 void get_scatter_nc_field_int(char *nc_name, char *var_name, size_t *start,
                               size_t *count, int *var);
-void initialize_mpi(void);
+void initialize_mpi(MPI_Fint *MPI_COMM_VIC_F);
 void map(size_t size, size_t n, size_t *from_map, size_t *to_map, void *from,
          void *to);
-void mpi_map_decomp_domain(size_t ncells, size_t mpi_size,
-                           int **mpi_map_local_array_sizes,
+void mpi_map_decomp_domain(size_t ncells, int **mpi_map_local_array_sizes,
                            int **mpi_map_global_array_offsets,
                            size_t **mpi_map_mapping_array);
 

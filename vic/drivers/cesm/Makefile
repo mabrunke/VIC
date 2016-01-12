@@ -40,7 +40,7 @@ VICPATH = ../../vic_run
 
 # NETCDF include .. change the path depending on travis or other location
 ifeq (true, ${TRAVIS})
-NETCDFPATH = /usr
+NETCDFPATH = ${TRAVIS_NETCDFPATH}
 else ifeq (hydro-c1, $(shell hostname))
 NETCDFPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
 else
@@ -49,7 +49,7 @@ endif
 
 # MPI include .. change the path depending on travis or other location
 ifeq (true, ${TRAVIS})
-MPIPATH = /usr
+MPIPATH = ${TRAVIS_MPIPATH}
 else ifeq (hydro-c1, $(shell hostname))
 MPIPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
 else
@@ -66,24 +66,21 @@ else
 CC = mpicc-mpich-mp
 endif
 
+ifeq (true, ${TRAVIS})
+FC = mpif90
+else
+FC = mpifort-mpich-mp
+endif
+
 # set includes
 INCLUDES = -I ${DRIVERPATH}/include -I ${VICPATH}/include -I ${SHAREDPATH}/include -I ${NETCDFPATH}/include -I ${MPIPATH}/include
 
-# Uncomment for normal optimized code flags (fastest run option)
-#CFLAGS  = -O3 -Wall -Wno-unused
+# Set libraries
 LIBRARY = -lm -L${NETCDFPATH}/lib -lnetcdf -L${MPIPATH}/lib -lmpi
 
-# Uncomment to include debugging information
+# Set compiler flags
 CFLAGS  =  ${INCLUDES} -ggdb -O0 -Wall -Wextra -fPIC
-#LIBRARY = -lm
-
-# Uncomment to include execution profiling information
-#CFLAGS  = ${INCLUDES} -O3 -pg -Wall -Wno-unused
-#LIBRARY = -lm
-
-# Uncomment to debug memory problems using electric fence (man efence)
-#CFLAGS  = ${INCLUDES} -g -Wall -Wno-unused
-#LIBRARY = -lm -lefence -L/usr/local/lib
+FFLAGS  = ${INCLUDES}
 
 # Set the log level
 # To turn off warning statements, set LOG_LVL >= 30
@@ -110,12 +107,16 @@ HDRS = \
 	$(wildcard ${DRIVERPATH}/include/*.h) \
 	$(wildcard ${SHAREDPATH}/include/*.h)
 
-SRCS = \
+CSRCS = \
 	$(wildcard ${VICPATH}/src/*.c) \
 	$(wildcard ${DRIVERPATH}/src/*.c) \
 	$(wildcard ${SHAREDPATH}/src/*.c)
 
-OBJS = $(SRCS:%.o=%.c)
+FSRCS = \
+	$(wildcard ${DRIVERPATH}/src/*.F90)
+
+COBJS = $(CSRCS:%.o=%.c)
+FOBJS = $(FSRCS:%.o=%.F90)
 
 all:
 	make depend
@@ -137,10 +138,11 @@ clean::
 	rm -f ${VICPATH}/src/*.o
 	rm -f core log
 	rm -f ${DRIVERPATH}/src/*~ ${SHAREDPATH}/src/*.~ ${VICPATH}/src/*~
-	rm -rf ${COMPLIB} ${COMPLIB}.dSYM
+	rm -rf ${COMPLIB}${EXT} ${COMPLIB}.dSYM
+	rm -f *.mod
 
 model: $(OBJS)
-	$(CC) $(LDFLAGGS) $(OBJS) $(CFLAGS) $(LIBRARY) -o ${COMPLIB}${EXT}
+	$(FC) $(LDFLAGGS) $(COBJS) $(FOBJS) $(FFLAGS) $(LIBRARY) -o ${COMPLIB}${EXT}
 
 # -------------------------------------------------------------
 # tags
@@ -157,8 +159,9 @@ clean::
 # depend
 # -------------------------------------------------------------
 depend: .depend
-.depend: $(SRCS) $(HDRS)
-	$(CC) $(CFLAGS) -M $(SRCS) -DLOG_LVL=$(LOG_LVL) > $@
+.depend: $(CSRCS) $(FSRCS) $(HDRS)
+	$(CC) $(CFLAGS) $(INCLUDES) -M $(CSRCS) -DLOG_LVL=$(LOG_LVL) > $@
+	$(FC) $(FFLAGS) $(INCLUDES) -M $(FSRCS) > $@
 
 clean::
 	rm -f .depend

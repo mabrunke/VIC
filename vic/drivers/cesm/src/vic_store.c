@@ -919,9 +919,12 @@ vic_store(void)
     if (nc_state_file.open == true) {
         status = nc_close(nc_state_file.nc_id);
         if (status != NC_NOERR) {
-            log_ncerr(status);
+            log_err("Error closing %s", nc_state_file.fname)
         }
     }
+
+    // write rpointer file
+    write_rpointer_file(nc_state_file.fname);
 
     free(cvar);
     free(ivar);
@@ -933,7 +936,7 @@ void
 initialize_state_file(nc_file_struct *nc)
 {
     extern size_t           current;
-    extern dmy_struct      *dmy;
+    extern dmy_struct       dmy;
     extern filenames_struct filenames;
     extern domain_struct    global_domain;
     extern option_struct    options;
@@ -942,8 +945,8 @@ initialize_state_file(nc_file_struct *nc)
     int                     old_fill_mode;
 
     sprintf(nc->fname, "%s.%04d%02d%02d_%05u.nc",
-            filenames.statefile, dmy[current].year, dmy[current].month,
-            dmy[current].day, dmy[current].dayseconds);
+            filenames.statefile, dmy.year, dmy.month,
+            dmy.day, dmy.dayseconds);
 
     nc->c_fillvalue = NC_FILL_CHAR;
     nc->i_fillvalue = NC_FILL_INT;
@@ -962,65 +965,84 @@ initialize_state_file(nc_file_struct *nc)
     // open the netcdf file
     status = nc_create(nc->fname, NC_NETCDF4 | NC_CLASSIC_MODEL, &(nc->nc_id));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error creating %s", nc->fname);
     }
     nc->open = true;
 
     // set the NC_FILL attribute
     status = nc_set_fill(nc->nc_id, NC_FILL, &old_fill_mode);
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error setting fill value in %s", nc->fname);
     }
 
     // define netcdf dimensions
     status = nc_def_dim(nc->nc_id, "snow_band", nc->band_size,
                         &(nc->band_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining snow_band in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "frost_area", nc->frost_size,
                         &(nc->frost_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining frost_area in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "nlayer", nc->layer_size,
                         &(nc->layer_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining nlayer in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "ni", nc->ni_size, &(nc->ni_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining ni in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "nj", nc->nj_size, &(nc->nj_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining nj in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "node", nc->node_size, &(nc->node_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining node in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "root_zone", nc->root_zone_size,
                         &(nc->root_zone_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining root_zone in %s", nc->fname);
     }
 
     status = nc_def_dim(nc->nc_id, "veg_class", nc->veg_size,
                         &(nc->veg_dimid));
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error defining veg_class in %s", nc->fname);
     }
 
     // leave define mode
     status = nc_enddef(nc->nc_id);
     if (status != NC_NOERR) {
-        log_ncerr(status);
+        log_err("Error leaving define mode for %s", nc->fname);
     }
+}
+
+/******************************************************************************
+ * @brief    Write rpointer file
+ *****************************************************************************/
+void
+write_rpointer_file(char *fname)
+{
+    FILE *fp = NULL;
+
+    fp = fopen(RPOINTER, "w");
+
+    if (fp == NULL) {
+        log_err("Error writing rpointer file %s", RPOINTER);
+    }
+
+    fprintf(fp, "%s\n", fname);
+
+    fclose(fp);
 }

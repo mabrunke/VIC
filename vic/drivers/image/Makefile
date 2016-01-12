@@ -41,6 +41,7 @@ VICPATH = ../../vic_run
 #SYNVEGPATH = ../../extensions/synveg_cn
 
 # NETCDF include .. change the path depending on travis or other location
+<<<<<<< HEAD
 #ifeq (true, ${TRAVIS})
 #NETCDFPATH = /usr
 #else ifeq (hydro-c1, $(shell hostname))
@@ -57,6 +58,24 @@ NETCDFPATH = /uaopt/netcdf/4.1.3-intel
 #else
 MPIPATH = /uaopt/mpich2/1.4.1p1
 #endif
+=======
+ifeq (true, ${TRAVIS})
+NETCDFPATH = ${TRAVIS_NETCDFPATH}
+else ifeq (hydro-c1, $(shell hostname))
+NETCDFPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
+else
+NETCDFPATH = /opt/local
+endif
+
+# MPI include .. change the path depending on travis or other location
+ifeq (true, ${TRAVIS})
+MPIPATH = ${TRAVIS_MPIPATH}
+else ifeq (hydro-c1, $(shell hostname))
+MPIPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
+else
+MPIPATH = /opt/local
+endif
+>>>>>>> upstream/driver/cesm
 
 # Set SHELL = your shell here
 SHELL = /bin/bash

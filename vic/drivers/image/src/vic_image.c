@@ -42,6 +42,7 @@ domain_struct       local_domain;
 global_param_struct global_param;
 lake_con_struct     lake_con;
 MPI_Datatype        mpi_global_struct_type;
+MPI_Datatype        mpi_filenames_struct_type;
 MPI_Datatype        mpi_location_struct_type;
 MPI_Datatype        mpi_nc_file_struct_type;
 MPI_Datatype        mpi_option_struct_type;
@@ -147,7 +148,7 @@ main(int    argc,
 
         // if save: TBD needs to be fixed - not working in MPI
         // if (current == global_param.nrecs - 1) {
-        //    vic_store();
+        // vic_store();
         // }
     }
 
