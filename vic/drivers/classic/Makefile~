@@ -1,0 +1,507 @@
+ ##############################################################################
+ # @section DESCRIPTION
+ #
+ # VIC Classic Driver Makefile
+ #
+ # @section LICENSE
+ #
+ # The Variable Infiltration Capacity (VIC) macroscale hydrological model
+ # Copyright (C) 2014 The Land Surface Hydrology Group, Department of Civil
+ # and Environmental Engineering, University of Washington.
+ #
+ # The VIC model is free software; you can redistribute it and/or
+ # modify it under the terms of the GNU General Public License
+ # as published by the Free Software Foundation; either version 2
+ # of the License, or (at your option) any later version.
+ #
+ # This program is distributed in the hope that it will be useful,
+ # but WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ # GNU General Public License for more details.
+ #
+ # You should have received a copy of the GNU General Public License along with
+ # this program; if not, write to the Free Software Foundation, Inc.,
+ # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ ##############################################################################
+
+# -----------------------------------------------------------------------
+# SET ENVIRONMENT-SPECIFIC OPTIONS HERE
+# -----------------------------------------------------------------------
+
+# VIC DRIVER PATH (include and src are subdirs of this)
+DRIVERPATH = .
+
+# VIC RUN PATH
+SHAREDPATH = /an1/sky/brunke/VICCN5.0.3/vic/drivers/shared
+
+# VIC RUN PATH
+VICPATH = /an1/sky/brunke/VICCN5.0.3/vic/vic_run
+
+# CN RUN PATH
+CNPATH = /an1/sky/brunke/VICCN5.0.3/vic/extensions/synveg_cn
+
+# Set SHELL = your shell here
+SHELL = /bin/bash
+
+# Set CC = your compiler here
+ifndef CC
+CC=gcc
+endif
+
+# Set F90 = your compiler here
+ifndef F90
+F90=ifort
+endif
+
+# Set the log level
+# To turn off warning statements, set LOG_LVL >= 30
+# | Level     | Numeric value    |
+# |---------  |---------------   |
+# | ERROR     | Always Active    |
+# | WARNING   | < 30             |
+# | INFO      | < 20             |
+# | DEBUG     | < 10             |
+LOG_LVL = 5
+
+# set include
+INCLUDES = -I ${DRIVERPATH}/include -I $(SHAREDPATH)/include -I ${VICPATH}/include
+
+# Uncomment for normal optimized code flags (fastest run option)
+#CFLAGS  = -O3 -Wall -Wno-unused
+# LIBRARY = -lm
+
+# Uncomment to include debugging information
+#CFLAGS  =  ${INCLUDES} -g -Wall -Wextra -std=c99 -DLOG_LVL=$(LOG_LVL)
+CFLAGS  =  ${INCLUDES} -g -Wall -Wno-unused
+FFLAGS  =  -fp-model precise -convert big_endian -assume byterecl -ftz
+#LIBRARY = -lm
+
+# Uncomment to include execution profiling information
+#CFLAGS  = ${INCLUDES} -O3 -pg -Wall -Wno-unused -DLOG_LVL=$(LOG_LVL)
+#LIBRARY = -lm
+
+# Uncomment to debug memory problems using electric fence (man efence)
+#CFLAGS  = ${INCLUDES} -g -Wall -Wno-unused -DLOG_LVL=$(LOG_LVL)
+#LIBRARY = -lm -lefence -L/usr/local/lib
+
+COMPEXE = vic_classic
+EXT = .exe
+
+# -----------------------------------------------------------------------
+# MOST USERS DO NOT NEED TO MODIFY BELOW THIS LINE
+# -----------------------------------------------------------------------
+
+
+.SUFFIXES: .c .F90 .o
+
+.c.o:
+	$(CC) -c $(CFLAGS) $<
+
+.F90.o:
+	$(F90) -c $(FFLAGS) $<
+
+#HDRS = ${VICPATH}/include/vic_def.h \
+#	${VICPATH}/include/vic_run.h \
+#	${DRIVERPATH}/include/vic_driver_classic.h \
+#	${DRIVERPATH}/include/mtclim_constants_vic.h \
+#	${DRIVERPATH}/include/mtclim_parameters_vic.h
+
+HDRS = \
+	$(wildcard ${VICPATH}/include/*.h) \
+	$(wildcard ${DRIVERPATH}/include/*.h) \
+	$(wildcard ${SHAREDPATH}/include/*.h)
+
+OBJS = \
+	${DRIVERPATH}/src/alloc_atmos.o \
+	${CNPATH}/src/alloc_cn.o \
+	${DRIVERPATH}/src/alloc_veg_hist.o \
+	${DRIVERPATH}/src/calc_air_temperature.o \
+	${DRIVERPATH}/src/calc_longwave.o \
+	${SHAREDPATH}/src/calc_root_fraction.o \
+	${DRIVERPATH}/src/check_files.o \
+	${DRIVERPATH}/src/check_state_file.o \
+	${DRIVERPATH}/src/close_files.o \
+	${SHAREDPATH}/src/cmd_proc.o \
+	${SHAREDPATH}/src/compress_files.o \
+	${SHAREDPATH}/src/compute_treeline.o \
+	${DRIVERPATH}/src/display_current_settings.o \
+	${SHAREDPATH}/src/free_all_vars.o \
+	${SHAREDPATH}/src/free_vegcon.o \
+	${SHAREDPATH}/src/get_dist.o \
+	${DRIVERPATH}/src/get_force_type.o \
+	${SHAREDPATH}/src/get_parameters.o \
+	${DRIVERPATH}/src/get_global_param.o \
+	${DRIVERPATH}/src/initialize_atmos.o \
+	${SHAREDPATH}/src/initialize_files.o \
+	${DRIVERPATH}/src/initialize_forcing_files.o \
+	${SHAREDPATH}/src/initialize_global.o \
+	${DRIVERPATH}/src/initialize_model_state.o \
+	${SHAREDPATH}/src/initialize_options.o \
+	${SHAREDPATH}/src/initialize_parameters.o \
+	${SHAREDPATH}/src/initialize_snow.o \
+	${SHAREDPATH}/src/initialize_soil.o \
+	${SHAREDPATH}/src/initialize_veg.o \
+	${SHAREDPATH}/src/make_all_vars.o \
+	${SHAREDPATH}/src/make_cell_data.o \
+	${SHAREDPATH}/src/make_dmy.o \
+	${SHAREDPATH}/src/make_energy_bal.o \
+	${DRIVERPATH}/src/make_in_and_outfiles.o \
+	${SHAREDPATH}/src/make_snow_data.o \
+	${SHAREDPATH}/src/make_veg_var.o \
+	${DRIVERPATH}/src/mtclim_vic.o \
+	${DRIVERPATH}/src/mtclim_wrapper.o \
+	${SHAREDPATH}/src/open_file.o \
+	${DRIVERPATH}/src/open_state_file.o \
+	${DRIVERPATH}/src/output_list_utils.o \
+	${DRIVERPATH}/src/parse_output_info.o \
+	${DRIVERPATH}/src/print_library_classic.o \
+	${SHAREDPATH}/src/print_library_shared.o \
+	${DRIVERPATH}/src/read_atmos_data.o \
+	${DRIVERPATH}/src/read_forcing_data.o \
+	${DRIVERPATH}/src/read_initial_model_state.o \
+	${DRIVERPATH}/src/read_lakeparam.o \
+	${DRIVERPATH}/src/read_snowband.o \
+	${DRIVERPATH}/src/read_soilparam.o \
+	${DRIVERPATH}/src/read_veglib.o \
+	${DRIVERPATH}/src/read_vegparam.o \
+	${DRIVERPATH}/src/set_output_defaults.o \
+	${DRIVERPATH}/src/vic_classic.o \
+	${DRIVERPATH}/src/write_data.o \
+	${DRIVERPATH}/src/write_forcing_file.o \
+	${DRIVERPATH}/src/write_header.o \
+	${DRIVERPATH}/src/write_model_state.o \
+	${DRIVERPATH}/src/write_output.o \
+	${VICPATH}/src/advected_sensible_heat.o \
+	${VICPATH}/src/arno_evap.o \
+	${VICPATH}/src/CalcAerodynamic.o \
+	${VICPATH}/src/calc_atmos_energy_bal.o \
+	${VICPATH}/src/CalcBlowingSnow.o \
+	${VICPATH}/src/calc_Nscale_factors.o \
+	${VICPATH}/src/calc_rainonly.o \
+	${VICPATH}/src/calc_snow_coverage.o \
+	${VICPATH}/src/calc_surf_energy_bal.o \
+	${VICPATH}/src/calc_veg_params.o \
+	${VICPATH}/src/calc_water_energy_balance_errors.o \
+	${VICPATH}/src/canopy_assimilation.o \
+	${VICPATH}/src/canopy_evap.o \
+	${VICPATH}/src/compute_coszen.o \
+	${VICPATH}/src/compute_pot_evap.o \
+	${VICPATH}/src/compute_soil_resp.o \
+	${VICPATH}/src/compute_zwt.o \
+	${VICPATH}/src/correct_precip.o \
+	${VICPATH}/src/estimate_T1.o \
+	${VICPATH}/src/faparl.o \
+	${VICPATH}/src/frozen_soil.o \
+	${VICPATH}/src/func_atmos_energy_bal.o \
+	${VICPATH}/src/func_atmos_moist_bal.o \
+	${VICPATH}/src/func_canopy_energy_bal.o \
+	${VICPATH}/src/func_surf_energy_bal.o \
+	${VICPATH}/src/IceEnergyBalance.o \
+	${VICPATH}/src/ice_melt.o \
+	${VICPATH}/src/initialize_lake.o \
+	${VICPATH}/src/interpoloation.o \
+	${VICPATH}/src/lakes.eb.o \
+	${VICPATH}/src/latent_heat_from_snow.o \
+	${VICPATH}/src/massrelease.o \
+	${VICPATH}/src/newt_raph_func_fast.o \
+	${VICPATH}/src/penman.o \
+	${VICPATH}/src/photosynth.o \
+	${VICPATH}/src/physics.o \
+	${VICPATH}/src/prepare_full_energy.o \
+	${VICPATH}/src/put_data.o \
+	${VICPATH}/src/root_brent.o \
+	${VICPATH}/src/runoff.o \
+	${VICPATH}/src/snow_intercept.o \
+	${VICPATH}/src/snow_melt.o \
+	${VICPATH}/src/SnowPackEnergyBalance.o \
+	${VICPATH}/src/snow_utility.o \
+	${VICPATH}/src/soil_carbon_balance.o \
+	${VICPATH}/src/soil_conduction.o \
+	${SHAREDPATH}/src/soil_moisture_from_water_table.o \
+	${VICPATH}/src/soil_thermal_eqn.o \
+	${VICPATH}/src/solve_snow.o \
+	${VICPATH}/src/StabilityCorrection.o \
+	${VICPATH}/src/surface_fluxes.o \
+	${VICPATH}/src/svp.o \
+	${SHAREDPATH}/src/vic_log.o \
+	${VICPATH}/src/vic_run.o \
+	${SHAREDPATH}/src/vic_time.o \
+	${VICPATH}/src/water_energy_balance.o \
+	${VICPATH}/src/water_under_ice.o \
+	${VICPATH}/src/write_layer.o \
+	${VICPATH}/src/write_vegvar.o \
+	${VICPATH}/src/zero_output_list.o \
+	${CNPATH}/src/get_CNatmos.o \
+	${CNPATH}/src/get_CNsoil.o \
+	${CNPATH}/src/get_CNsoilhydro.o \
+	${CNPATH}/src/get_CNsoiltherm.o \
+	${CNPATH}/src/get_CNveg.o \
+	${CNPATH}/src/pft2cov.o \
+	${CNPATH}/src/shr_kind_mod.o \
+	${CNPATH}/src/shr_const_mod.o \
+	${CNPATH}/src/shr_orb_mod.o \
+	${CNPATH}/src/clm_varpar.o \
+	${CNPATH}/src/clm_varcon.o \
+	${CNPATH}/src/nanMod.o \
+	${CNPATH}/src/clmtype.o \
+	${CNPATH}/src/clm_time_manager.o \
+	${CNPATH}/src/pftvarcon.o \
+	${CNPATH}/src/ndepStreamMod.o \
+	${CNPATH}/src/SurfaceAlbedoMod.o \
+	${CNPATH}/src/SurfaceRadiationMod.o \
+	${CNPATH}/src/QSatMod.o \
+	${CNPATH}/src/CanopyFluxesMod.o \
+	${CNPATH}/src/subgridAveMod.o \
+	${CNPATH}/src/CNAllocationMod.o \
+	${CNPATH}/src/CNAnnualUpdateMod.o \
+	${CNPATH}/src/CNBalanceCheckMod.o \
+	${CNPATH}/src/CNCStateUpdate1Mod.o \
+	${CNPATH}/src/CNCStateUpdate2Mod.o \
+	${CNPATH}/src/CNCStateUpdate3Mod.o \
+	${CNPATH}/src/CNDecompMod.o \
+	${CNPATH}/src/CNFireMod.o \
+	${CNPATH}/src/CNGRespMod.o \
+	${CNPATH}/src/CNGapMortalityMod.o \
+	${CNPATH}/src/CNMRespMod.o \
+	${CNPATH}/src/CNNDynamicsMod.o \
+	${CNPATH}/src/CNNStateUpdate1Mod.o \
+	${CNPATH}/src/CNNStateUpdate2Mod.o \
+	${CNPATH}/src/CNNStateUpdate3Mod.o \
+	${CNPATH}/src/CNPhenologyMod.o \
+	${CNPATH}/src/CNPrecisionControlMod.o \
+	${CNPATH}/src/CNVegStructUpdateMod.o \
+	${CNPATH}/src/CNSetValueMod.o \
+	${CNPATH}/src/CNSummaryMod.o \
+	${CNPATH}/src/CNWoodProductsMod.o \
+	${CNPATH}/src/CNiniSpecial.o \
+	${CNPATH}/src/clmtypeInitMod.o \
+	${CNPATH}/src/init_clmpftwt.o \
+	${CNPATH}/src/iniTimeConst.o \
+	${CNPATH}/src/CNEcosystemDynMod.o \
+	${CNPATH}/src/CNiniTimeVar.o \
+	${CNPATH}/src/clm_initializeMod.o \
+	${CNPATH}/src/vic2clmtypeMod.o \
+	${CNPATH}/src/VICCNInterface.o
+
+OBJS2 = \
+	alloc_atmos.o \
+	alloc_cn.o \
+	alloc_veg_hist.o \
+	calc_air_temperature.o \
+	calc_longwave.o \
+	calc_root_fraction.o \
+	check_files.o \
+	check_state_file.o \
+	close_files.o \
+	cmd_proc.o \
+	compress_files.o \
+	compute_treeline.o \
+	display_current_settings.o \
+	free_all_vars.o \
+	free_vegcon.o \
+	get_dist.o \
+	get_force_type.o \
+	get_global_param.o \
+	get_parameters.o \
+	initialize_atmos.o \
+	initialize_files.o \
+	initialize_forcing_files.o \
+	initialize_global.o \
+	initialize_model_state.o \
+	initialize_options.o \
+	initialize_parameters.o \
+	initialize_snow.o \
+	initialize_soil.o \
+	initialize_veg.o \
+	make_all_vars.o \
+	make_cell_data.o \
+	make_dmy.o \
+	make_energy_bal.o \
+	make_in_and_outfiles.o \
+	make_snow_data.o \
+	make_veg_var.o \
+	mtclim_vic.o \
+	mtclim_wrapper.o \
+	open_file.o \
+	open_state_file.o \
+	output_list_utils.o \
+	parse_output_info.o \
+	print_library_classic.o \
+	print_library_shared.o \
+	read_atmos_data.o \
+	read_forcing_data.o \
+	read_initial_model_state.o \
+	read_lakeparam.o \
+	read_snowband.o \
+	read_soilparam.o \
+	read_veglib.o \
+	read_vegparam.o \
+	set_output_defaults.o \
+	vic_classic.o \
+	write_data.o \
+	write_forcing_file.o \
+	write_header.o \
+	write_model_state.o \
+	write_output.o \
+	advected_sensible_heat.o \
+	arno_evap.o \
+	CalcAerodynamic.o \
+	calc_atmos_energy_bal.o \
+	CalcBlowingSnow.o \
+	calc_Nscale_factors.o \
+	calc_rainonly.o \
+	calc_snow_coverage.o \
+	calc_surf_energy_bal.o \
+	calc_veg_params.o \
+	calc_water_energy_balance_errors.o \
+	canopy_assimilation.o \
+	canopy_evap.o \
+	compute_coszen.o \
+	compute_pot_evap.o \
+	compute_soil_resp.o \
+	compute_zwt.o \
+	correct_precip.o \
+	estimate_T1.o \
+	faparl.o \
+	frozen_soil.o \
+	func_atmos_energy_bal.o \
+	func_atmos_moist_bal.o \
+	func_canopy_energy_bal.o \
+	func_surf_energy_bal.o \
+	IceEnergyBalance.o \
+	ice_melt.o \
+	initialize_lake.o \
+	interpoloation.o \
+	lakes.eb.o \
+	latent_heat_from_snow.o \
+	massrelease.o \
+	newt_raph_func_fast.o \
+	penman.o \
+	photosynth.o \
+	physics.o \
+	prepare_full_energy.o \
+	put_data.o \
+	root_brent.o \
+	runoff.o \
+	snow_intercept.o \
+	snow_melt.o \
+	SnowPackEnergyBalance.o \
+	snow_utility.o \
+	soil_carbon_balance.o \
+	soil_conduction.o \
+	soil_moisture_from_water_table.o \
+	soil_thermal_eqn.o \
+	solve_snow.o \
+	StabilityCorrection.o \
+	surface_fluxes.o \
+	svp.o \
+	vic_log.o \
+	vic_run.o \
+	vic_time.o \
+	water_energy_balance.o \
+	water_under_ice.o \
+	write_layer.o \
+	write_vegvar.o \
+	zero_output_list.o \
+	get_CNatmos.o \
+	get_CNsoil.o \
+	get_CNsoilhydro.o \
+	get_CNsoiltherm.o \
+	get_CNveg.o \
+	pft2cov.o \
+	shr_kind_mod.o \
+	shr_const_mod.o \
+	shr_orb_mod.o \
+	clm_varpar.o \
+	clm_varcon.o \
+	nanMod.o \
+	clmtype.o \
+	clm_time_manager.o \
+	pftvarcon.o \
+	ndepStreamMod.o \
+	SurfaceAlbedoMod.o \
+	SurfaceRadiationMod.o \
+	QSatMod.o \
+	CanopyFluxesMod.o \
+	subgridAveMod.o \
+	CNAllocationMod.o \
+	CNAnnualUpdateMod.o \
+	CNBalanceCheckMod.o \
+	CNCStateUpdate1Mod.o \
+	CNCStateUpdate2Mod.o \
+	CNCStateUpdate3Mod.o \
+	CNDecompMod.o \
+	CNFireMod.o \
+	CNGRespMod.o \
+	CNGapMortalityMod.o \
+	CNMRespMod.o \
+	CNNDynamicsMod.o \
+	CNNStateUpdate1Mod.o \
+	CNNStateUpdate2Mod.o \
+	CNNStateUpdate3Mod.o \
+	CNPhenologyMod.o \
+	CNPrecisionControlMod.o \
+	CNVegStructUpdateMod.o \
+	CNSetValueMod.o \
+	CNSummaryMod.o \
+	CNWoodProductsMod.o \
+	CNiniSpecial.o \
+	clmtypeInitMod.o \
+	init_clmpftwt.o \
+	iniTimeConst.o \
+	CNEcosystemDynMod.o \
+	CNiniTimeVar.o \
+	clm_initializeMod.o \
+	vic2clmtypeMod.o \
+	VICCNInterface.o
+
+#SRCS = \
+#	$(wildcard ${VICPATH}/src/*.c) \
+#	$(wildcard ${DRIVERPATH}/src/*.c) \
+#	$(wildcard ${SHAREDPATH}/src/*.c)
+
+SRCS = $(OBJS:%.o=%.c)
+
+#all:
+#	make depend
+#	make model
+
+#default:
+#	make depend
+#	make model
+
+#full:
+#	make clean
+#	make depend
+#	make tags
+#	make model
+
+#clean::
+#	\rm -f core log
+#	\rm -rf ${COMPEXE}${EXT} ${COMPEXE}${EXT}.dSYM
+
+#model: $(OBJS)
+#	$(CC) -o ${COMPEXE}${EXT} $(OBJS) $(CFLAGS) $(LIBRARY)
+model:  $(OBJS)
+	$(F90) -o ${COMPEXE}${EXT} -nofor_main $(OBJS2)
+
+# -------------------------------------------------------------
+# tags
+# so we can find our way around
+# -------------------------------------------------------------
+#tags:	TAGS
+#TAGS:	$(SRCS) $(HDRS)
+#	etags $(SRCS) $(HDRS)
+#clean::
+#	\rm -f TAGS
+
+
+# -------------------------------------------------------------
+# depend
+# -------------------------------------------------------------
+#depend: .depend
+#.depend: $(SRCS) $(HDRS)
+#	$(CC) $(CFLAGS) -M $(SRCS) > $@
+
+#clean::
+#	\rm -f .depend

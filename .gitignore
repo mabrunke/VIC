@@ -8,12 +8,22 @@
 *.lib
 *.a
 
+# Build process
+.depend
+
 # Shared objects (inc. Windows DLLs)
 *.dll
 *.so
 *.so.*
 *.dylib
+*.dSYM
 
 vicNl
+vic_classic
+vic_image
+liblnd.a
 
 .DS_Store
+TAGS
+
+*egg-info*
