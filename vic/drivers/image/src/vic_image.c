@@ -103,31 +103,31 @@ main(int    argc,
     vic_start();
 
     // read global parameters for vegetation
-    // synveg_start();
+    synveg_start();
 
     // allocate memory
     vic_alloc();
 
     // allocate memory for vegetation
-    // synveg_alloc();
+    synveg_alloc();
 
     // initialize vegetation model
     vic_init();
 
     // initialize model parameters for vegetation
-    // synveg_init();
+    synveg_init();
 
     // restore model state, either using a cold start or from a restart file
     vic_restore();
 
     // restore model state for vegetation
-    // synveg_restore();
+    synveg_restore();
 
     // initialize output structures
     vic_init_output();
 
     // initialize output for vegetation
-    // synveg_init_output();
+    synveg_init_output();
 
     // loop over all timesteps
     for (current = 0; current < global_param.nrecs; current++) {
@@ -138,13 +138,13 @@ main(int    argc,
         vic_image_run();
 
 	// run vegetation
-	// synveg_run();
+	synveg_run();
 
         // if output:
         vic_write();
 
 	// if output for vegetation
-	// synveg_write();
+	synveg_write();
 
         // if save: TBD needs to be fixed - not working in MPI
         // if (current == global_param.nrecs - 1) {
@@ -156,7 +156,7 @@ main(int    argc,
     vic_finalize();
 
     // clean up vegetation
-    // synveg_finalize();
+    synveg_finalize();
 
     // finalize MPI
     status = MPI_Finalize();
