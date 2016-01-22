@@ -53,6 +53,7 @@ int                 mpi_rank;
 int                 mpi_size;
 int                *Nveg;
 int                *Npfts;
+int                 begg, endg, begc, endc, begp, endp;
 nc_file_struct      nc_hist_file;
 nc_var_struct       nc_vars[N_OUTVAR_TYPES];
 option_struct       options;

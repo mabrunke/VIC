@@ -35,9 +35,9 @@ void synveg_init(void)
   extern option_struct       options;
   extern int                *Nveg;
   extern int                *Npfts;
+  extern int                 begg, endg, begc, endc, begp, endp;
 
   size_t                     j;
-  int                        begg, endg, begc, endc, begp, endp;
   int                        veg_class;
   int                       *vegclass;
   double                    *vegfract;
@@ -66,11 +66,11 @@ void synveg_init(void)
 	vegfract[i * (MAX_VEG + 1) + j] = veg_con[i][j].Cv;
       }
 
-    dt = global_param.dt * 3600.0;
-
-    clm_initialize2_(&dt, &nlevgrnd, &begg, &endg, &begc,		\
-			 &endc, &begp, &endp, Nveg, vegclass,		\
-			 vegfract, Npfts);
   }
 
+  dt = global_param.dt * 3600.0;
+
+  clm_initialize2_(&dt, &nlevgrnd, &begg, &endg, &begc,			\
+			 &endc, &begp, &endp, Nveg, vegclass,		\
+			 vegfract, Npfts);
 }
