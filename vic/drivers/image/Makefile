@@ -38,16 +38,15 @@ SHAREDPATH = ../shared
 VICPATH = ../../vic_run
 
 # SYNVEG PATH
-#SYNVEGPATH = ../../extensions/synveg_cn
+SYNVEGPATH = ../../extensions/synveg_cn
 
 # NETCDF include .. change the path depending on travis or other location
-<<<<<<< HEAD
 #ifeq (true, ${TRAVIS})
 #NETCDFPATH = /usr
 #else ifeq (hydro-c1, $(shell hostname))
 #NETCDFPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
 #else
-NETCDFPATH = /uaopt/netcdf/4.1.3-intel
+NETCDFPATH = /glade/apps/opt/netcdf/4.3.0
 #endif
 
 # MPI include .. change the path depending on travis or other location
@@ -56,26 +55,9 @@ NETCDFPATH = /uaopt/netcdf/4.1.3-intel
 #else ifeq (hydro-c1, $(shell hostname))
 #MPIPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
 #else
-MPIPATH = /uaopt/mpich2/1.4.1p1
+MPIPATH = /glade/apps/opt/mpich/3.0.4
 #endif
-=======
-ifeq (true, ${TRAVIS})
-NETCDFPATH = ${TRAVIS_NETCDFPATH}
-else ifeq (hydro-c1, $(shell hostname))
-NETCDFPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
-else
-NETCDFPATH = /opt/local
-endif
-
-# MPI include .. change the path depending on travis or other location
-ifeq (true, ${TRAVIS})
-MPIPATH = ${TRAVIS_MPIPATH}
-else ifeq (hydro-c1, $(shell hostname))
-MPIPATH = /usr/local/netcdf-4.3.0+gcc-4.7.2
-else
-MPIPATH = /opt/local
-endif
->>>>>>> upstream/driver/cesm
+F90PATH = /glade/apps/opt/intel/12.1.5
 
 # Set SHELL = your shell here
 SHELL = /bin/bash
@@ -88,11 +70,12 @@ CC = mpicc
 #endif
 
 # Set F90 = your compiler here
-ifeq (true, ${TRAVIS})
-F90 = ifort
-else
-F90 = ifort-mpich-mp
-endif
+#ifeq (true, ${TRAVIS})
+F90 = mpif90
+#F90 = ifort
+#else
+#F90 = ifort-mpich-mp
+#endif
 
 # Set the log level
 # To turn off warning statements, set LOG_LVL >= 30
@@ -106,7 +89,7 @@ LOG_LVL = 5
 
 # set includes
 #INCLUDES = -I ${DRIVERPATH}/include -I ${VICPATH}/include -I ${SYNVEGPATH}/include -I ${SHAREDPATH}/include -I ${NETCDFPATH}/include -I ${MPIPATH}/include
-INCLUDES = -I ${DRIVERPATH}/include -I ${VICPATH}/include -I ${SHAREDPATH}/include -I ${NETCDFPATH}/include -I ${MPIPATH}/include
+INCLUDES = -I ${DRIVERPATH}/include -I ${VICPATH}/include -I ${SHAREDPATH}/include -I ${SYNVEGPATH}/include -I ${NETCDFPATH}/include -I ${MPIPATH}/include
 
 # Uncomment for normal optimized code flags (fastest run option)
 #CFLAGS  = -O3 -Wall -Wno-unused -DLOG_LVL=$(LOG_LVL)
@@ -114,8 +97,9 @@ INCLUDES = -I ${DRIVERPATH}/include -I ${VICPATH}/include -I ${SHAREDPATH}/inclu
 
 # Uncomment to include debugging information
 CFLAGS  =  ${INCLUDES} -ggdb -O0 -Wall -Wextra -std=c99 -DLOG_LVL=$(LOG_LVL)
-LIBRARY = -lm -L${NETCDFPATH}/lib -lnetcdf -L${MPIPATH}/lib -lmpich -rpath-link
-FFLAGS  = -fp-model precise -convert big_endian -assume byterecl -ftz
+LIBRARY = -lm -L${NETCDFPATH}/lib -lnetcdf -L${MPIPATH}/lib -lmpich
+FFLAGS  = -f90=ifort -fp-model precise -convert big_endian -assume byterecl -ftz
+#FFLAGS  = -fp-model precise -convert big_endian -assume byterecl -ftz
 
 # Uncomment to include execution profiling information
 # CFLAGS  = ${INCLUDES} -O3 -pg -Wall -Wno-unused  -DLOG_LVL=$(LOG_LVL)
@@ -132,25 +116,40 @@ EXT = .exe
 # MOST USERS DO NOT NEED TO MODIFY BELOW THIS LINE
 # -----------------------------------------------------------------------
 
-#.SUFFIXES: .c .F90 .o
+.SUFFIXES: .c .F90 .mod .o
 
-#.c.o:
-#	$(CC) -c $(CFLAGS) $(LIBRARY) $<
+.c.o:
+	$(CC) -c $(CFLAGS) $(INCLUDES) $(LIBRARY) $<
 
-#.F90.o:
-#	$(F90) -c $(FFLAGS) $<
+.F90.o:
+	$(F90) -c $(FFLAGS) $<
 
 HDRS = \
 	$(wildcard ${VICPATH}/include/*.h) \
 	$(wildcard ${DRIVERPATH}/include/*.h) \
-	$(wildcard ${SHAREDPATH}/include/*.h)
+	$(wildcard ${SHAREDPATH}/include/*.h) \
+	${SYNVEGPATH}/include/synveg_cn.h
 
 SRCS = \
 	$(wildcard ${VICPATH}/src/*.c) \
 	$(wildcard ${DRIVERPATH}/src/*.c) \
-	$(wildcard ${SHAREDPATH}/src/*.c)
+	$(wildcard ${SHAREDPATH}/src/*.c) \
+	$(wildcard ${SYNVEGPATH}/src/*.c) \
+	$(wildcard ${SYNVEGPATH}/src/*.F90)
 
-OBJS = $(SRCS:%.o=%.c)
+CSRCS = \
+	$(wildcard ${VICPATH}/src/*.c) \
+	$(wildcard ${DRIVERPATH}/src/*.c) \
+	$(wildcard ${SHAREDPATH}/src/*.c) \
+	$(wildcard ${SYNVEGPATH}/src/*.c)
+
+FSRCS = $(wildcard ${SYNVEGPATH}/src/*.F90)
+
+COBJS = $(patsubst %.c,%.o,$(CSRCS))
+FOBJS = $(patsubst %.F90,%.o,$(FSRCS))
+OBJS = $(COBJS) $(FOBJS)
+
+OBJS2 = $(notdir $(OBJS))
 
 all:
 #	make depend
@@ -170,10 +169,12 @@ clean::
 	\rm -f core log
 	\rm -rf ${COMPEXE} ${COMPEXE}.dSYM
 
-model: $(OBJS)
-	$(CC) -o ${COMPEXE}${EXT} $(OBJS) $(CFLAGS) $(LIBRARY)
 #model: $(OBJS)
-#	$(F90) -o ${COMPEXE} -nofor_main $(OBJS)
+#	$(CC) -o ${COMPEXE}${EXT} $(OBJS) $(CFLAGS) $(LIBRARY)
+model: $(OBJS)
+	$(F90) -f90=ifort -o ${COMPEXE} -nofor_main $(OBJS2) $(INCLUDES) $(LIBRARY) 
+# -L${F90PATH}/lib/intel64 -lifcore -Wl,${F90PATH}/lib/intel64/libifcore.so.5
+#	$(F90) -o ${COMPEXE} -nofor_main $(OBJS2) $(INCLUDES) $(LIBRARY)
 
 # -------------------------------------------------------------
 # tags

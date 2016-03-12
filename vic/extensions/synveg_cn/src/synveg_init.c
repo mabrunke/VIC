@@ -26,51 +26,61 @@
 
 #include <vic_def.h>
 #include <vic_run.h>
+#include <vic_driver_image.h>
 #include <synveg_cn.h>
 
 // initialize vegetation model
 void synveg_init(void)
 {
+  extern global_param_struct global_param;
   extern domain_struct       local_domain;
   extern option_struct       options;
+  extern veg_con_struct    **veg_con;
+  extern int                 mpi_rank;
   extern int                *Nveg;
   extern int                *Npfts;
-  extern int                 begg, endg, begc, endc, begp, endp;
 
   size_t                     j;
-  int                        veg_class;
+  int                        i, nlevgrnd, veg_class;
+  int                        begg, endg, begc, endc, begp, endp;
   int                       *vegclass;
   double                    *vegfract;
   double                     dt;
 
     /* Initialize CN state, MAB 8/29/15 */
-  vegclass = calloc(local_domain.ncells * (MAX_VEG + 1), sizeof(int));
-  vegfract = calloc(local_domain.ncells * (MAX_VEG + 1), sizeof(double));
-  Nveg = calloc(local_domain.ncells, sizeof(int));
-  Npfts = calloc(local_domain.ncells, sizeof(int));
+  if(mpi_rank == 0) {
+    vegclass = calloc(local_domain.ncells * (MAX_VEG + 1), sizeof(int));
+    vegfract = calloc(local_domain.ncells * (MAX_VEG + 1), sizeof(double));
+    Nveg = calloc(local_domain.ncells, sizeof(int));
 
-  begg = 1;
-  endg = local_domain.ncells;
-  begc = 1;
-  endc = options.SNOW_BAND;
-  begp = 1;
-  nlevgrnd = options.Nnode;
-  for(i = 0; i < local_domain.ncells; i++) {
-    endp += options.SNOW_BAND * veg_con[i][0].vegetat_type_num;
-    Nveg[i] = veg_con[i][0].vegetat_type_num;
-    Npfts[i] = 0;
+    Npfts = calloc(local_domain.ncells, sizeof(int));
 
-    for(j = 0; j <= veg_con[i][0].vegetat_type_num; j++)
-      {
-	vegclass[i * (MAX_VEG + 1) + j] = veg_con[i][j].veg_class;
-	vegfract[i * (MAX_VEG + 1) + j] = veg_con[i][j].Cv;
-      }
+    begg = 1;
+    endg = (int) local_domain.ncells;
+    begc = 1;
+    endc = (int) options.SNOW_BAND;
+    begp = 1;
+    endp = 0;
+    nlevgrnd = (int) options.Nnode;
+    for(i = 0; i < local_domain.ncells; i++) {
 
-  }
+      endp += options.SNOW_BAND * veg_con[i][0].vegetat_type_num;
+      Nveg[i] = veg_con[i][0].vegetat_type_num;
+      Npfts[i] = 0;
 
-  dt = global_param.dt * 3600.0;
+      for(j = 0; j <= veg_con[i][0].vegetat_type_num; j++)
+	{
+	  vegclass[i * (MAX_VEG + 1) + j] = veg_con[i][j].veg_class;
+	  vegfract[i * (MAX_VEG + 1) + j] = veg_con[i][j].Cv;
+	}
 
-  clm_initialize2_(&dt, &nlevgrnd, &begg, &endg, &begc,			\
+    }
+
+    dt = global_param.dt * 3600.0;
+
+    clm_initialize2_(&dt, &nlevgrnd, &begg, &endg, &begc,		\
 			 &endc, &begp, &endp, Nveg, vegclass,		\
 			 vegfract, Npfts);
+  }
+
 }

@@ -1,13 +1,13 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <vic_def.h>
+#include <vic_driver_image.h>
+#include <synveg_cn.h>
 
 static char vcid[] = "$Id$";
 
 /****************************************************************************/
 /*			       alloc_cn()                                */
 /****************************************************************************/
-void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
+cn_data_struct *alloc_cn(int Nbands, int Nnode)
 /*******************************************************************
   alloc_cn       Created by Michael Brunke
 
@@ -20,194 +20,200 @@ void alloc_cn(int Nbands, int Nnode, cn_data_struct **cn)
 {
 
   int iband, iveg, k, r, n;
+  cn_data_struct *temp;
 
-  *cn = (cn_data_struct *) calloc(Nbands, sizeof(cn_data_struct));
-  /*  if (*cn == NULL)
-      { */
+  temp = (cn_data_struct *) calloc(Nbands, sizeof(cn_data_struct *));
+  if (temp == NULL)
+      {
+	log_err("Memory allocation error in alloc_cn().");
+      }
+
       for(iband = 0; iband < Nbands; iband++)
 	{
-	  for(iveg = 0; iveg < MAX_PFT; iveg++)
+	  for(iveg = 0; iveg < MAX_PFT + 1; iveg++)
 	    {
-	      (*cn)[iband].Tveg[iveg] = 0.0;
-	      (*cn)[iband].rveg[iveg] = 0.0;
-	      (*cn)[iband].zov[iveg] = 0.0;
-	      (*cn)[iband].displ[iveg] = 0.0;
-	      (*cn)[iband].fwet[iveg] = 0.0;
-	      (*cn)[iband].LAI[iveg] = 0.0;
-	      (*cn)[iband].dormant_flag[iveg] = 0.0;
-	      (*cn)[iband].days_active[iveg] = 0.0;
-	      (*cn)[iband].onset_flag[iveg] = 0.0;
-	      (*cn)[iband].onset_counter[iveg] = 0.0;
-	      (*cn)[iband].onset_gddflag[iveg] = 0.0;
-	      (*cn)[iband].onset_fdd[iveg] = 0.0;
-	      (*cn)[iband].onset_gdd[iveg] = 0.0;
-	      (*cn)[iband].onset_swi[iveg] = 0.0;
-	      (*cn)[iband].offset_flag[iveg] = 0.0;
-	      (*cn)[iband].offset_counter[iveg] = 0.0;
-	      (*cn)[iband].offset_fdd[iveg] = 0.0;
-	      (*cn)[iband].offset_swi[iveg] = 0.0;
-	      (*cn)[iband].lgsf[iveg] = 0.0;
-	      (*cn)[iband].bglfr[iveg] = 0.0;
-	      (*cn)[iband].bgtr[iveg] = 0.0;
-	      (*cn)[iband].dayl[iveg] = 0.0;
-	      (*cn)[iband].prev_dayl[iveg] = 0.0;
-	      (*cn)[iband].annavg_t2m[iveg] = 0.0;
-	      (*cn)[iband].tempavg_t2m[iveg] = 0.0;
-	      (*cn)[iband].gpp2[iveg] = 0.0;
-	      (*cn)[iband].availc[iveg] = 0.0;
-	      (*cn)[iband].xsmrpool_recover[iveg] = 0.0;
-	      (*cn)[iband].alloc_pnow[iveg] = 0.0;
-	      (*cn)[iband].c_allometry[iveg] = 0.0;
-	      (*cn)[iband].n_allometry[iveg] = 0.0;
-	      (*cn)[iband].tempsum_potential_gpp[iveg] = 0.0;
-	      (*cn)[iband].annsum_potential_gpp[iveg] = 0.0;
-	      (*cn)[iband].tempmax_retransn[iveg] = 0.0;
-	      (*cn)[iband].annmax_retransn[iveg] = 0.0;
-	      (*cn)[iband].avail_retransn[iveg] = 0.0;
-	      (*cn)[iband].plant_nalloc[iveg] = 0.0;
-	      (*cn)[iband].plant_calloc[iveg] = 0.0;
-	      (*cn)[iband].excess_cflux[iveg] = 0.0;
-	      (*cn)[iband].downreg[iveg] = 0.0;
-	      (*cn)[iband].prev_leafc_to_litter[iveg] = 0.0;
-	      (*cn)[iband].prev_frootc_to_litter[iveg] = 0.0;
-	      (*cn)[iband].tempsum_npp[iveg] = 0.0;
-	      (*cn)[iband].annsum_npp[iveg] = 0.0;
-	      (*cn)[iband].gpp[iveg] = 0.0;
-	      (*cn)[iband].npp[iveg] = 0.0;
-	      (*cn)[iband].ar[iveg] = 0.0;
-	      (*cn)[iband].leafc[iveg] = 0.0;
-	      (*cn)[iband].leafc_storage[iveg] = 0.0;
-	      (*cn)[iband].leafc_xfer[iveg] = 0.0;
-	      (*cn)[iband].frootc[iveg] = 0.0;
-	      (*cn)[iband].frootc_storage[iveg] = 0.0;
-	      (*cn)[iband].frootc_xfer[iveg] = 0.0;
-	      (*cn)[iband].livestemc[iveg] = 0.0;
-	      (*cn)[iband].livestemc_storage[iveg] = 0.0;
-	      (*cn)[iband].livestemc_xfer[iveg] = 0.0;
-	      (*cn)[iband].deadstemc[iveg] = 0.0;
-	      (*cn)[iband].deadstemc_storage[iveg] = 0.0;
-	      (*cn)[iband].deadstemc_xfer[iveg] = 0.0;
-	      (*cn)[iband].livecrootc[iveg] = 0.0;
-	      (*cn)[iband].livecrootc_storage[iveg] = 0.0;
-	      (*cn)[iband].livecrootc_xfer[iveg] = 0.0;
-	      (*cn)[iband].deadcrootc[iveg] = 0.0;
-	      (*cn)[iband].deadcrootc_storage[iveg] = 0.0;
-	      (*cn)[iband].deadcrootc_xfer[iveg] = 0.0;
-	      (*cn)[iband].gresp_storage[iveg] = 0.0;
-	      (*cn)[iband].gresp_xfer[iveg] = 0.0;
-	      (*cn)[iband].cpool[iveg] = 0.0;
-	      (*cn)[iband].xsmrpool[iveg] = 0.0;
-	      (*cn)[iband].pft_ctrunc[iveg] = 0.0;
-	      (*cn)[iband].totvegc[iveg] = 0.0;
-	      (*cn)[iband].woodc[iveg] = 0.0;
-	      (*cn)[iband].leafn[iveg] = 0.0;
-	      (*cn)[iband].leafn_storage[iveg] = 0.0;
-	      (*cn)[iband].leafn_xfer[iveg] = 0.0;
-	      (*cn)[iband].frootn[iveg] = 0.0;
-	      (*cn)[iband].frootn_storage[iveg] = 0.0;
-	      (*cn)[iband].frootn_xfer[iveg] = 0.0;
-	      (*cn)[iband].livestemn[iveg] = 0.0;
-	      (*cn)[iband].livestemn_storage[iveg] = 0.0;
-	      (*cn)[iband].livestemn_xfer[iveg] = 0.0;
-	      (*cn)[iband].deadstemn[iveg] = 0.0;
-	      (*cn)[iband].deadstemn_storage[iveg] = 0.0;
-	      (*cn)[iband].deadstemn_xfer[iveg] = 0.0;
-	      (*cn)[iband].livecrootn[iveg] = 0.0;
-	      (*cn)[iband].livecrootn_storage[iveg] = 0.0;
-	      (*cn)[iband].livecrootn_xfer[iveg] = 0.0;
-	      (*cn)[iband].deadcrootn[iveg] = 0.0;
-	      (*cn)[iband].deadcrootn_storage[iveg] = 0.0;
-	      (*cn)[iband].deadcrootn_xfer[iveg] = 0.0;
-	      (*cn)[iband].retransn[iveg] = 0.0;
-	      (*cn)[iband].npool[iveg] = 0.0;
-	      (*cn)[iband].pft_ntrunc[iveg] = 0.0;
+	      temp[iband].Tveg[iveg] = 0.0;
+	      temp[iband].rveg[iveg] = 0.0;
+	      temp[iband].zov[iveg] = 0.0;
+	      temp[iband].displ[iveg] = 0.0;
+	      temp[iband].fwet[iveg] = 0.0;
+	      temp[iband].LAI[iveg] = 0.0;
+	      temp[iband].dormant_flag[iveg] = 0.0;
+	      temp[iband].days_active[iveg] = 0.0;
+	      temp[iband].onset_flag[iveg] = 0.0;
+	      temp[iband].onset_counter[iveg] = 0.0;
+	      temp[iband].onset_gddflag[iveg] = 0.0;
+	      temp[iband].onset_fdd[iveg] = 0.0;
+	      temp[iband].onset_gdd[iveg] = 0.0;
+	      temp[iband].onset_swi[iveg] = 0.0;
+	      temp[iband].offset_flag[iveg] = 0.0;
+	      temp[iband].offset_counter[iveg] = 0.0;
+	      temp[iband].offset_fdd[iveg] = 0.0;
+	      temp[iband].offset_swi[iveg] = 0.0;
+	      temp[iband].lgsf[iveg] = 0.0;
+	      temp[iband].bglfr[iveg] = 0.0;
+	      temp[iband].bgtr[iveg] = 0.0;
+	      temp[iband].dayl[iveg] = 0.0;
+	      temp[iband].prev_dayl[iveg] = 0.0;
+	      temp[iband].annavg_t2m[iveg] = 0.0;
+	      temp[iband].tempavg_t2m[iveg] = 0.0;
+	      temp[iband].gpp2[iveg] = 0.0;
+	      temp[iband].availc[iveg] = 0.0;
+	      temp[iband].xsmrpool_recover[iveg] = 0.0;
+	      temp[iband].alloc_pnow[iveg] = 0.0;
+	      temp[iband].c_allometry[iveg] = 0.0;
+	      temp[iband].n_allometry[iveg] = 0.0;
+	      temp[iband].tempsum_potential_gpp[iveg] = 0.0;
+	      temp[iband].annsum_potential_gpp[iveg] = 0.0;
+	      temp[iband].tempmax_retransn[iveg] = 0.0;
+	      temp[iband].annmax_retransn[iveg] = 0.0;
+	      temp[iband].avail_retransn[iveg] = 0.0;
+	      temp[iband].plant_nalloc[iveg] = 0.0;
+	      temp[iband].plant_calloc[iveg] = 0.0;
+	      temp[iband].excess_cflux[iveg] = 0.0;
+	      temp[iband].downreg[iveg] = 0.0;
+	      temp[iband].prev_leafc_to_litter[iveg] = 0.0;
+	      temp[iband].prev_frootc_to_litter[iveg] = 0.0;
+	      temp[iband].tempsum_npp[iveg] = 0.0;
+	      temp[iband].annsum_npp[iveg] = 0.0;
+	      temp[iband].gpp[iveg] = 0.0;
+	      temp[iband].npp[iveg] = 0.0;
+	      temp[iband].ar[iveg] = 0.0;
+	      temp[iband].leafc[iveg] = 0.0;
+	      temp[iband].leafc_storage[iveg] = 0.0;
+	      temp[iband].leafc_xfer[iveg] = 0.0;
+	      temp[iband].frootc[iveg] = 0.0;
+	      temp[iband].frootc_storage[iveg] = 0.0;
+	      temp[iband].frootc_xfer[iveg] = 0.0;
+	      temp[iband].livestemc[iveg] = 0.0;
+	      temp[iband].livestemc_storage[iveg] = 0.0;
+	      temp[iband].livestemc_xfer[iveg] = 0.0;
+	      temp[iband].deadstemc[iveg] = 0.0;
+	      temp[iband].deadstemc_storage[iveg] = 0.0;
+	      temp[iband].deadstemc_xfer[iveg] = 0.0;
+	      temp[iband].livecrootc[iveg] = 0.0;
+	      temp[iband].livecrootc_storage[iveg] = 0.0;
+	      temp[iband].livecrootc_xfer[iveg] = 0.0;
+	      temp[iband].deadcrootc[iveg] = 0.0;
+	      temp[iband].deadcrootc_storage[iveg] = 0.0;
+	      temp[iband].deadcrootc_xfer[iveg] = 0.0;
+	      temp[iband].gresp_storage[iveg] = 0.0;
+	      temp[iband].gresp_xfer[iveg] = 0.0;
+	      temp[iband].cpool[iveg] = 0.0;
+	      temp[iband].xsmrpool[iveg] = 0.0;
+	      temp[iband].pft_ctrunc[iveg] = 0.0;
+	      temp[iband].totvegc[iveg] = 0.0;
+	      temp[iband].woodc[iveg] = 0.0;
+	      temp[iband].leafn[iveg] = 0.0;
+	      temp[iband].leafn_storage[iveg] = 0.0;
+	      temp[iband].leafn_xfer[iveg] = 0.0;
+	      temp[iband].frootn[iveg] = 0.0;
+	      temp[iband].frootn_storage[iveg] = 0.0;
+	      temp[iband].frootn_xfer[iveg] = 0.0;
+	      temp[iband].livestemn[iveg] = 0.0;
+	      temp[iband].livestemn_storage[iveg] = 0.0;
+	      temp[iband].livestemn_xfer[iveg] = 0.0;
+	      temp[iband].deadstemn[iveg] = 0.0;
+	      temp[iband].deadstemn_storage[iveg] = 0.0;
+	      temp[iband].deadstemn_xfer[iveg] = 0.0;
+	      temp[iband].livecrootn[iveg] = 0.0;
+	      temp[iband].livecrootn_storage[iveg] = 0.0;
+	      temp[iband].livecrootn_xfer[iveg] = 0.0;
+	      temp[iband].deadcrootn[iveg] = 0.0;
+	      temp[iband].deadcrootn_storage[iveg] = 0.0;
+	      temp[iband].deadcrootn_xfer[iveg] = 0.0;
+	      temp[iband].retransn[iveg] = 0.0;
+	      temp[iband].npool[iveg] = 0.0;
+	      temp[iband].pft_ntrunc[iveg] = 0.0;
 	    }
 
-	  (*cn)[iband].Tair = 0.0;
-	  (*cn)[iband].vp = 0.0;
-	  (*cn)[iband].vpd = 0.0;
-	  (*cn)[iband].psfc = 0.0;
-	  (*cn)[iband].lwrad = 0.0;
-	  (*cn)[iband].swrad = 0.0;
-	  (*cn)[iband].precip = 0.0;
+	  temp[iband].Tair = 0.0;
+	  temp[iband].vp = 0.0;
+	  temp[iband].vpd = 0.0;
+	  temp[iband].psfc = 0.0;
+	  temp[iband].lwrad = 0.0;
+	  temp[iband].swrad = 0.0;
+	  temp[iband].precip = 0.0;
 	  for(r = 0; r < 2; r++)
 	    {
-	      (*cn)[iband].swrd[r] = 0.0;
-	      (*cn)[iband].swri[r] = 0.0;
+	      temp[iband].swrd[r] = 0.0;
+	      temp[iband].swri[r] = 0.0;
 	    }
-	  (*cn)[iband].alb = 0.0;
+	  temp[iband].alb = 0.0;
 	  for(k = 0; k < Nnode + 2; k++)
 	    {
-	      (*cn)[iband].t_soisno[k] = 0.0;
-	      (*cn)[iband].z[k] = 0.0;
-	      (*cn)[iband].dz[k] = 0.0;
-	      (*cn)[iband].ice[k] = 0.0;
+	      temp[iband].t_soisno[k] = 0.0;
+	      temp[iband].z[k] = 0.0;
+	      temp[iband].dz[k] = 0.0;
+	      temp[iband].ice[k] = 0.0;
 	    }
-	  (*cn)[iband].z0 = 0.0;
-	  (*cn)[iband].z0s = 0.0;
-	  (*cn)[iband].baseflow = 0.0;
-	  (*cn)[iband].snowdep = 0.0;
-	  (*cn)[iband].decl = 0.0;
-	  (*cn)[iband].fpi = 0.0;
-	  (*cn)[iband].fpg = 0.0;
-	  (*cn)[iband].annsum_counter = 0.0;
-	  (*cn)[iband].cannsum_npp = 0.0;
-	  (*cn)[iband].cannavg_t2m = 0.0;
+	  temp[iband].z0 = 0.0;
+	  temp[iband].z0s = 0.0;
+	  temp[iband].baseflow = 0.0;
+	  temp[iband].snowdep = 0.0;
+	  temp[iband].decl = 0.0;
+	  temp[iband].fpi = 0.0;
+	  temp[iband].fpg = 0.0;
+	  temp[iband].annsum_counter = 0.0;
+	  temp[iband].cannsum_npp = 0.0;
+	  temp[iband].cannavg_t2m = 0.0;
 	  for(k = 0; k < Nnode; k++)
 	    {
-	      (*cn)[iband].watfc[k] = 0.0;
-	      (*cn)[iband].moist[k] = 0.0;
+	      temp[iband].watfc[k] = 0.0;
+	      temp[iband].moist[k] = 0.0;
 	      for(iveg = 0; iveg < MAX_PFT; iveg++)
-		  (*cn)[iband].rootfr[iveg][k] = 0.0;
+		  temp[iband].rootfr[iveg][k] = 0.0;
 	      for(n = 0; n < 2; n++)
 		{
-		  (*cn)[iband].bsw[k][n] = 0.0;
-		  (*cn)[iband].sucsat[k][n] = 0.0;
-		  (*cn)[iband].soisuc[k][n] = 0.0;
+		  temp[iband].bsw[k][n] = 0.0;
+		  temp[iband].sucsat[k][n] = 0.0;
+		  temp[iband].soisuc[k][n] = 0.0;
 		}
 	    }
-	  (*cn)[iband].me = 0.0;
-	  (*cn)[iband].fire_prob = 0.0;
-	  (*cn)[iband].mean_fire_prob = 0.0;
-	  (*cn)[iband].fireseasonl = 0.0;
-	  (*cn)[iband].ann_farea_burned = 0.0;
-	  (*cn)[iband].hr = 0.0;
-	  (*cn)[iband].lithr = 0.0;
-	  (*cn)[iband].nee = 0.0;
-	  (*cn)[iband].nep = 0.0;
-	  (*cn)[iband].cwdc = 0.0;
-	  (*cn)[iband].litr1c = 0.0;
-	  (*cn)[iband].litr2c = 0.0;
-	  (*cn)[iband].litr3c = 0.0;
-	  (*cn)[iband].soil1c = 0.0;
-	  (*cn)[iband].soil2c = 0.0;
-	  (*cn)[iband].soil3c = 0.0;
-	  (*cn)[iband].soil4c = 0.0;
-	  (*cn)[iband].seedc = 0.0;
-	  (*cn)[iband].col_ctrunc = 0.0;
-	  (*cn)[iband].totlitc = 0.0;
-          (*cn)[iband].totsomc = 0.0;
-	  (*cn)[iband].totcolc = 0.0;
-	  (*cn)[iband].prod10c = 0.0;
-	  (*cn)[iband].prod100c = 0.0;
-	  (*cn)[iband].cwdn = 0.0;
-	  (*cn)[iband].litr1n = 0.0;
-	  (*cn)[iband].litr2n = 0.0;
-	  (*cn)[iband].litr3n = 0.0;
-	  (*cn)[iband].soil1n = 0.0;
-	  (*cn)[iband].soil2n = 0.0;
-	  (*cn)[iband].soil3n = 0.0;
-	  (*cn)[iband].soil4n = 0.0;
-	  (*cn)[iband].sminn = 0.0;
-	  (*cn)[iband].seedn = 0.0;
-	  (*cn)[iband].col_ntrunc = 0.0;
-	  (*cn)[iband].totcoln = 0.0;
-	  (*cn)[iband].prod10n = 0.0;
-	  (*cn)[iband].prod100n = 0.0;
+	  temp[iband].me = 0.0;
+	  temp[iband].fire_prob = 0.0;
+	  temp[iband].mean_fire_prob = 0.0;
+	  temp[iband].fireseasonl = 0.0;
+	  temp[iband].ann_farea_burned = 0.0;
+	  temp[iband].hr = 0.0;
+	  temp[iband].lithr = 0.0;
+	  temp[iband].nee = 0.0;
+	  temp[iband].nep = 0.0;
+	  temp[iband].cwdc = 0.0;
+	  temp[iband].litr1c = 0.0;
+	  temp[iband].litr2c = 0.0;
+	  temp[iband].litr3c = 0.0;
+	  temp[iband].soil1c = 0.0;
+	  temp[iband].soil2c = 0.0;
+	  temp[iband].soil3c = 0.0;
+	  temp[iband].soil4c = 0.0;
+	  temp[iband].seedc = 0.0;
+	  temp[iband].col_ctrunc = 0.0;
+	  temp[iband].totlitc = 0.0;
+          temp[iband].totsomc = 0.0;
+	  temp[iband].totcolc = 0.0;
+	  temp[iband].prod10c = 0.0;
+	  temp[iband].prod100c = 0.0;
+	  temp[iband].cwdn = 0.0;
+	  temp[iband].litr1n = 0.0;
+	  temp[iband].litr2n = 0.0;
+	  temp[iband].litr3n = 0.0;
+	  temp[iband].soil1n = 0.0;
+	  temp[iband].soil2n = 0.0;
+	  temp[iband].soil3n = 0.0;
+	  temp[iband].soil4n = 0.0;
+	  temp[iband].sminn = 0.0;
+	  temp[iband].seedn = 0.0;
+	  temp[iband].col_ntrunc = 0.0;
+	  temp[iband].totcoln = 0.0;
+	  temp[iband].prod10n = 0.0;
+	  temp[iband].prod100n = 0.0;
 
 	  }
 
       /*    } */
+
+  return temp;
 
 }
 

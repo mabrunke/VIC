@@ -27,6 +27,7 @@
 #include <vic_def.h>
 #include <vic_run.h>
 #include <vic_driver_image.h>
+#include <synveg_cn.h>
 
 size_t              NF, NR;
 size_t              current;
@@ -42,7 +43,6 @@ domain_struct       local_domain;
 global_param_struct global_param;
 lake_con_struct     lake_con;
 MPI_Datatype        mpi_global_struct_type;
-MPI_Datatype        mpi_filenames_struct_type;
 MPI_Datatype        mpi_location_struct_type;
 MPI_Datatype        mpi_nc_file_struct_type;
 MPI_Datatype        mpi_option_struct_type;
@@ -53,7 +53,6 @@ int                 mpi_rank;
 int                 mpi_size;
 int                *Nveg;
 int                *Npfts;
-int                 begg, endg, begc, endc, begp, endp;
 nc_file_struct      nc_hist_file;
 nc_var_struct       nc_vars[N_OUTVAR_TYPES];
 option_struct       options;
@@ -122,13 +121,13 @@ main(int    argc,
     vic_restore();
 
     // restore model state for vegetation
-    synveg_restore();
+    //synveg_restore();
 
     // initialize output structures
     vic_init_output();
 
     // initialize output for vegetation
-    synveg_init_output();
+    // synveg_init_output();
 
     // loop over all timesteps
     for (current = 0; current < global_param.nrecs; current++) {
@@ -145,11 +144,11 @@ main(int    argc,
         vic_write();
 
 	// if output for vegetation
-	synveg_write();
+	// synveg_write();
 
         // if save: TBD needs to be fixed - not working in MPI
         // if (current == global_param.nrecs - 1) {
-        // vic_store();
+        //    vic_store();
         // }
     }
 
@@ -157,7 +156,7 @@ main(int    argc,
     vic_finalize();
 
     // clean up vegetation
-    synveg_finalize();
+    // synveg_finalize();
 
     // finalize MPI
     status = MPI_Finalize();

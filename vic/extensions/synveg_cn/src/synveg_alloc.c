@@ -26,30 +26,33 @@
 
 #include <vic_def.h>
 #include <vic_run.h>
+#include <vic_driver_image.h>
 #include <synveg_cn.h>
 
 /******************************************************************************
  * @brief    Allocate memory for VIC structures.
  *****************************************************************************/
-void alloc_cn(void)
+void synveg_alloc(void)
 {
     extern domain_struct       local_domain;
     extern option_struct       options;
     extern cn_data_struct    **cn;
+    extern int                 mpi_rank;
     size_t                     i;
     size_t                     j;
 
     /* cn allocation, MAB 8/27/15 */
-    cn = (cn_data_struct **) malloc((size_t) local_domain.ncells * \
-				    sizeof(cn_data_struct *));
-    if (cn == NULL) {
+    /* cn = (cn_data_struct **) malloc((size_t) local_domain.ncells * \
+				    sizeof(cn_data_struct *)); */
+    /* if (cn == NULL) {
       log_err("Memory allocation error in vic_alloc().");
-    }
+      } */
 
     // allocate memory for individual grid cells
-    for (i = 0; i < local_domain.ncells; i++) {
+    /* for (i = 0; i < local_domain.ncells; i++) { */
 	/* allocate memory for cn, MAB 8/27/15 */
-	alloc_cn(options.SNOW_BAND, options.Nnode, &(cn[i]));
+    if(mpi_rank == 0)
+	cn = alloc_cn(options.SNOW_BAND, options.Nnode);
 
-    }
+    /* } */
 }
