@@ -68,27 +68,28 @@ vic_init_output(void)
         // open the netcdf history file
         initialize_history_file(&nc_hist_file);
     }
-
+    
     // broadcast which variables to write.
     for (i = 0; i < N_OUTVAR_TYPES; i++) {
         status = MPI_Bcast(&out_data[0][i].write, 1, MPI_C_BOOL,
-                           0, MPI_COMM_VIC);
+                           0, MPI_COMM_WORLD);
         if (status != MPI_SUCCESS) {
             log_err("MPI error in vic_init_output(): %d\n", status);
         }
     }
-
-    // broadcast history file info. Only the master process will write to it,
+    
+    // broadcast history file info. Only the master process will write to it, 
     // but the slave processes need some of the information to initialize as
     // well (particularly which variables to write and dimension sizes)
     status = MPI_Bcast(&nc_hist_file, 1, mpi_nc_file_struct_type,
-                       0, MPI_COMM_VIC);
+                       0, MPI_COMM_WORLD);
     if (status != MPI_SUCCESS) {
         log_err("MPI error in vic_init_output(): %d\n", status);
     }
-
+  
     // initialize netcdf info for output variables
     vic_nc_info(&nc_hist_file, out_data, nc_vars);
+
 }
 
 /******************************************************************************
@@ -125,78 +126,78 @@ initialize_history_file(nc_file_struct *nc)
     // open the netcdf file
     status = nc_create(nc->fname, NC_NETCDF4 | NC_CLASSIC_MODEL, &(nc->nc_id));
     if (status != NC_NOERR) {
-        log_err("Error creating %s", nc->fname);
+        log_ncerr(status);
     }
     nc->open = true;
 
     // set the NC_FILL attribute
     status = nc_set_fill(nc->nc_id, NC_FILL, &old_fill_mode);
     if (status != NC_NOERR) {
-        log_err("Error setting fill value in %s", nc->fname);
+        log_ncerr(status);
     }
 
     // define netcdf dimensions
     status = nc_def_dim(nc->nc_id, "snow_band", nc->band_size,
                         &(nc->band_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining snow_band dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "front", nc->front_size,
                         &(nc->front_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining front dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "frost_area", nc->frost_size,
                         &(nc->frost_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining frost_area dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "nlayer", nc->layer_size,
                         &(nc->layer_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining nlayer dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "ni", nc->ni_size, &(nc->ni_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining ni dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "nj", nc->nj_size, &(nc->nj_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining nj dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "node", nc->node_size, &(nc->node_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining node dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "root_zone", nc->root_zone_size,
                         &(nc->root_zone_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining root_zone dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "veg_class", nc->veg_size,
                         &(nc->veg_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining veg_class dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
     status = nc_def_dim(nc->nc_id, "time", nc->time_size,
                         &(nc->time_dimid));
     if (status != NC_NOERR) {
-        log_err("Error defining time dimenension in %s", nc->fname);
+        log_ncerr(status);
     }
 
 
     // leave define mode
     status = nc_enddef(nc->nc_id);
     if (status != NC_NOERR) {
-        log_err("Error leaving define mode for %s", nc->fname);
+        log_ncerr(status);
     }
 }

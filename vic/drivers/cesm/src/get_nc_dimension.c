@@ -43,26 +43,25 @@ get_nc_dimension(char *nc_name,
     // open the netcdf file
     status = nc_open(nc_name, NC_NOWRITE, &nc_id);
     if (status != NC_NOERR) {
-        log_err("Error opening %s", nc_name);
+        log_ncerr(status);
     }
 
     // get dimension id
     status = nc_inq_dimid(nc_id, dim_name, &dim_id);
     if (status != NC_NOERR) {
-        log_err("Error getting dimension id %s in %s", dim_name, nc_name);
+        log_ncerr(status);
     }
 
     // get dimension size
     status = nc_inq_dimlen(nc_id, dim_id, &dim_size);
     if (status != NC_NOERR) {
-        log_err("Error getting dimension size for dim %s in %s", dim_name,
-                nc_name);
+        log_ncerr(status);
     }
 
     // close the netcdf file
     status = nc_close(nc_id);
     if (status != NC_NOERR) {
-        log_err("Error closing %s", nc_name);
+        log_ncerr(status);
     }
 
     return dim_size;
