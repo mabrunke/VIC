@@ -1,5 +1,6 @@
 #include <vic_def.h>
 #include <vic_run.h>
+#include <synveg_cn.h>
 
 void cov2pft(double cov_val, int veg_class, double veg_fract, double pft_vals[MAX_PFT+1])
 

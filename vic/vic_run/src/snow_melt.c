@@ -65,6 +65,7 @@ snow_melt(double            Le,
           double           *save_refreeze_energy,
           double           *save_sensible,
           int               UNSTABLE_SNOW,
+          int               rec,
           int               iveg,
           int               band,
           snow_data_struct *snow)
@@ -293,7 +294,7 @@ snow_melt(double            Le,
                         snow->surf_temp_fbcount++;
                     }
                     else {
-                        error = ErrorSnowPackEnergyBalance(snow->surf_temp,
+                        error = ErrorSnowPackEnergyBalance(snow->surf_temp, rec,
                                                            iveg, band,
                                                            delta_t, aero_resist,
                                                            aero_resist_used,
@@ -562,7 +563,7 @@ ErrorPrintSnowPackEnergyBalance(double  TSurf,
     /* Define Variable Argument List */
 
     /* General Model Parameters */
-    int    iveg, band;
+    int    rec, iveg, band;
     double Dt;                    /* Model time step (sec) */
 
     /* Vegetation Parameters */
@@ -623,6 +624,7 @@ ErrorPrintSnowPackEnergyBalance(double  TSurf,
     /* Read Variable Argument List */
 
     /* General Model Parameters */
+    rec = (int) va_arg(ap, int);
     iveg = (int) va_arg(ap, int);
     band = (int) va_arg(ap, int);
     Dt = (double) va_arg(ap, double);
@@ -676,6 +678,7 @@ ErrorPrintSnowPackEnergyBalance(double  TSurf,
             "screen, check for invalid values.\n");
 
     /* general model terms */
+    fprintf(LOG_DEST, "rec = %i\n", rec);
     fprintf(LOG_DEST, "iveg = %i\n", iveg);
     fprintf(LOG_DEST, "band = %i\n", band);
     fprintf(LOG_DEST, "Dt = %f\n", Dt);

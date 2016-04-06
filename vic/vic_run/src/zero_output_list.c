@@ -1,7 +1,7 @@
 /******************************************************************************
  * @section DESCRIPTION
  *
- * Get netCDF dimension.
+ * This routine resets the values of all output variables to 0.
  *
  * @section LICENSE
  *
@@ -26,43 +26,18 @@
 
 #include <vic_def.h>
 #include <vic_run.h>
-#include <vic_driver_image.h>
 
 /******************************************************************************
- * @brief    Get netCDF dimension.
+ * @brief    This routine resets the values of all output variables to 0.
  *****************************************************************************/
-size_t
-get_nc_dimension(char *nc_name,
-                 char *dim_name)
+void
+zero_output_list(out_data_struct *out_data)
 {
-    int    nc_id;
-    int    dim_id;
-    size_t dim_size;
-    int    status;
+    size_t varid, i;
 
-    // open the netcdf file
-    status = nc_open(nc_name, NC_NOWRITE, &nc_id);
-    if (status != NC_NOERR) {
-        log_ncerr(status);
+    for (varid = 0; varid < N_OUTVAR_TYPES; varid++) {
+        for (i = 0; i < out_data[varid].nelem; i++) {
+            out_data[varid].data[i] = 0;
+        }
     }
-
-    // get dimension id
-    status = nc_inq_dimid(nc_id, dim_name, &dim_id);
-    if (status != NC_NOERR) {
-        log_ncerr(status);
-    }
-
-    // get dimension size
-    status = nc_inq_dimlen(nc_id, dim_id, &dim_size);
-    if (status != NC_NOERR) {
-        log_ncerr(status);
-    }
-
-    // close the netcdf file
-    status = nc_close(nc_id);
-    if (status != NC_NOERR) {
-        log_ncerr(status);
-    }
-
-    return dim_size;
 }

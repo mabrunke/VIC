@@ -66,13 +66,13 @@
 #define MAX_SUBDAILY_STEPS_PER_DAY  1440
 
 /***** Potential Evap types *****/
-#define N_PET_TYPES 6
-#define N_PET_TYPES_NON_NAT 4
+#define N_PET_TYPES 0
+#define N_PET_TYPES_NON_NAT 0
 #define PET_SATSOIL 0
 #define PET_H2OSURF 1
 #define PET_SHORT   2
 #define PET_TALL    3
-#define N_PET_TYPES_NAT 2
+#define N_PET_TYPES_NAT 0
 #define PET_NATVEG  4
 #define PET_VEGNOCR 5
 
@@ -792,7 +792,7 @@ typedef struct {
     unsigned short int endyear;    /**< Last year of model simulation */
     unsigned short int forceday[2];  /**< day forcing files starts */
     unsigned int forcesec[2];          /**< seconds since midnight when forcing
-                                          files starts */
+                                      files starts */
     unsigned short int forcemonth[2];  /**< month forcing files starts */
     unsigned short int forceoffset[2];  /**< counter to keep track of offset in reading
                                            forcing files; updated after every read */
@@ -1426,196 +1426,6 @@ typedef struct {
                                condensation from snow pack (m) */
 } snow_data_struct;
 
-/******************************************************************
- * @brief   This structure stores output from CN, 
- *          added by MAB, 7/23/14
- *****************************************************************/
- typedef struct {
-   /* atmospheric quantities */
-   double Tair;                               /* air temperature */
-   double vp;                                 /* vapor pressure */
-   double vpd;                                /* vapor pressure depression */
-   double psfc;                               /* surface pressure */
-   double lwrad;                              /* longwave radiation */
-   double swrad;                              /* shortwave radiation */
-   double precip;                             /* precipitation */
-   double swrd[NUMRAD];                    /* direct shortwave radiation */
-   double swri[NUMRAD];                    /* diffuse shortwave radiation */
-   double alb;                                /* albedo */
-   double t2m[MAX_PFT+1];                   /* 2-m air temperature */
-   double t_soisno[MAX_NODES+2];              /* soil/snow temperature */
-   /* Soil properties */
-   double z[MAX_NODES+2];                     /* Node depth */
-   double dz[MAX_NODES+2];                    /* Node thickness */
-   double z0;                                 /* Surface roughness */
-   double z0s;                                /* Snow roughness */
-   /* Vegetation characteristics */
-   double Tveg[MAX_PFT+1];                  /* vegetation temperature */
-   double rveg[MAX_PFT+1];                  /* vegetation resistance */
-   double zov[MAX_PFT+1];                   /* vegetation roughness */
-   double displ[MAX_PFT+1];                 /* displacement height */
-   double fwet[MAX_PFT+1];                  /* wet veg fraction */
-   /* Soil hydrology */
-   double baseflow;                           /* baseflow */
-   double moist[MAX_NODES];                   /* soil moisture */
-   double ice[MAX_NODES+2];                     /* soil ice */
-   double rootfr[MAX_PFT+1][MAX_NODES];     /* root fraction */
-   double bsw[MAX_NODES][2];                  /* Clapp-Hornberger coefficient */
-   double sucsat[MAX_NODES][2];               /* saturated suction */
-   double soisuc[MAX_NODES][2];               /* soil matrix potential */
-   double snowdep;                            /* snow depth */
-   /* PFT-level ecophysiological variables */
-   double LAI[MAX_PFT+1];                   /* leaf area index */
-   double dormant_flag[MAX_PFT+1];          /* dormancy flag */
-   double days_active[MAX_PFT+1];           /* # days since last dormancy */
-   double onset_flag[MAX_PFT+1];            /* onset flag */
-   double onset_counter[MAX_PFT+1];         /* onset days counter */
-   double onset_gddflag[MAX_PFT+1];         /* onset flag for growing deg day sum */
-   double onset_fdd[MAX_PFT+1];             /* onset freezing deg day counter */
-   double onset_gdd[MAX_PFT+1];             /* onset growing degree days */
-   double onset_swi[MAX_PFT+1];             /* onset soil water index */
-   double offset_flag[MAX_PFT+1];            /* offset flag */
-   double offset_counter[MAX_PFT+1];         /* offset days counter */
-   double offset_fdd[MAX_PFT+1];             /* offset freezing deg day counter */
-   double offset_swi[MAX_PFT+1];             /* offset soil water index */
-   double lgsf[MAX_PFT+1];                  /* long growing season factor */
-   double bglfr[MAX_PFT+1];                 /* background litterfall rate (1/s) */
-   double bgtr[MAX_PFT+1];                  /* background transfer growth rate (1/s) */
-   double dayl[MAX_PFT+1];                  /* daylength (s) */
-   double prev_dayl[MAX_PFT+1];             /* daylength at previous timestep (s) */
-   double annavg_t2m[MAX_PFT+1];            /* annual average 2-m air temperature (K) */
-   double tempavg_t2m[MAX_PFT+1];           /* temporary average 2-m air temperature (K) */
-   double gpp2[MAX_PFT+1];                   /* GPP flux before downregulation (g C/m^2/s) */
-   double availc[MAX_PFT+1];                /* C flux available for allocation (g C/m^2/s) */
-   double xsmrpool_recover[MAX_PFT+1];      /* C flux assigned to recovery (g C/m^2/s) */
-   double alloc_pnow[MAX_PFT+1];            /* fraction of current allocation as new growth */
-   double c_allometry[MAX_PFT+1];           /* C allocation index */
-   double n_allometry[MAX_PFT+1];           /* N allocation index */
-   double plant_ndemand[MAX_PFT+1];         /* N flux required to support GPP (g N/m^2/s) */
-   double tempsum_potential_gpp[MAX_PFT+1]; /* temporary annual sum of potential GPP */
-   double annsum_potential_gpp[MAX_PFT+1];  /* annuals sum of potential GPP */
-   double tempmax_retransn[MAX_PFT+1];      /* temporary annual max of retrans N pool (g N/m^2) */
-   double annmax_retransn[MAX_PFT+1];       /* annual max of retransloc N pool (g N/m^2) */
-   double avail_retransn[MAX_PFT+1];        /* N flux avail for retransloc (g N/m^2/s) */
-   double plant_nalloc[MAX_PFT+1];          /* total allocated N flux (g N/m^2/s) */
-   double plant_calloc[MAX_PFT+1];          /* total allocated C flux (g C/m^2/s) */
-   double excess_cflux[MAX_PFT+1];          /* C flux not allocated (g C/m^2/s) */
-   double downreg[MAX_PFT+1];               /* fract reduction in GPP due to N limit */
-   double prev_leafc_to_litter[MAX_PFT+1];  /* previous leaf C litterfall (g C/m^2/s) */
-   double prev_frootc_to_litter[MAX_PFT+1]; /* previous froot C litterfall (g C/m^2/s) */
-   double tempsum_npp[MAX_PFT+1];           /* temporary annual sum of NPP (g C/m^2/yr) */
-   double annsum_npp[MAX_PFT+1];            /* annual sum of NPP (g C/m^2/yr) */
-   double gpp[MAX_PFT+1];                   /* gross primary production (g C/m^2/s) */
-   double npp[MAX_PFT+1];                   /* net primary production (g C/m^2/s) */
-   double ar[MAX_PFT+1];                    /* autotrophic respiration (g C/m^2/s) */
-   double gr[MAX_PFT+1];                    /* growth respiration (g C/m^2/s) */
-   double mr[MAX_PFT+1];                    /* maintenance respiration (g C/m^2/s) */
-   double leaf_mr[MAX_PFT+1];               /* leaf maintenance respiration (g C/m^2/s) */
-   double litfall[MAX_PFT+1];               /* litterfall (g C/m^2/s) */
-   double rs[MAX_PFT+1];                    /* stomatal resistance */
-   double par[MAX_PFT+1];                   /* absorbed PAR */
-   /* PFT-level carbon state */
-   double leafc[MAX_PFT+1];                 /* leaf C (g C/m^2) */
-   double leafc_storage[MAX_PFT+1];         /* leaf C storage (g C/m^2) */
-   double leafc_xfer[MAX_PFT+1];            /* leaf C transfer (g C/m^2) */
-   double frootc[MAX_PFT+1];                /* fine root C (g C/m^2) */
-   double frootc_storage[MAX_PFT+1];        /* fine root C storage (g C/m^2) */
-   double frootc_xfer[MAX_PFT+1];           /* fine root C transfer (g C/m^2) */
-   double livestemc[MAX_PFT+1];             /* live stem C (g C/m^2) */
-   double livestemc_storage[MAX_PFT+1];     /* live stem C storage (g C/m^2) */
-   double livestemc_xfer[MAX_PFT+1];        /* live stem C transfer (g C/m^2) */
-   double deadstemc[MAX_PFT+1];             /* dead stem C (g C/m^2) */
-   double deadstemc_storage[MAX_PFT+1];     /* dead stem C storage (g C/m^2) */
-   double deadstemc_xfer[MAX_PFT+1];        /* dead stem C transfer (g C/m^2) */
-   double livecrootc[MAX_PFT+1];            /* live coarse root C (g C/m^2) */
-   double livecrootc_storage[MAX_PFT+1];    /* live coarse root C storage (g C/m^2) */
-   double livecrootc_xfer[MAX_PFT+1];       /* live coarse root C transfer (g C/m^2) */
-   double deadcrootc[MAX_PFT+1];            /* dead coarse root C (g C/m^2) */
-   double deadcrootc_storage[MAX_PFT+1];    /* dead coarse root C storage (g C/m^2) */
-   double deadcrootc_xfer[MAX_PFT+1];       /* dead coarse root C transfer (g C/m^2) */
-   double gresp_storage[MAX_PFT+1];         /* growth respiration storage (g C/m^2) */
-   double gresp_xfer[MAX_PFT+1];            /* growth respiration transfer (g C/m^2) */
-   double cpool[MAX_PFT+1];                 /* temporary photosynthate C pool (g C/m^2) */
-   double xsmrpool[MAX_PFT+1];              /* abstract C pool to meet excess MR demand (g C/m^2) */
-   double pft_ctrunc[MAX_PFT+1];            /* PFT-level sink for C truncation (g C/m^2) */
-   double totvegc[MAX_PFT+1];               /* total vegetation C (g C/m^2) */
-   double woodc[MAX_PFT+1];                 /* wood C (g C/m^2) */
-   double fpsn[MAX_PFT+1];                  /* photosynthesis */
-   double ci[MAX_PFT+1];                    /* intracellular CO2 */
-   /* PFT-level nitrogen state */
-   double leafn[MAX_PFT+1];                 /* leaf N (g N/m^2) */
-   double leafn_storage[MAX_PFT+1];         /* leaf N storage (g N/m^2) */
-   double leafn_xfer[MAX_PFT+1];            /* leaf N transfer (g N/m^2) */
-   double frootn[MAX_PFT+1];                /* fine root N (g N/m^2) */
-   double frootn_storage[MAX_PFT+1];        /* fine root N storage (g N/m^2) */
-   double frootn_xfer[MAX_PFT+1];           /* fine root N transfer (g N/m^2) */
-   double livestemn[MAX_PFT+1];             /* live stem N (g N/m^2) */
-   double livestemn_storage[MAX_PFT+1];     /* live stem N storage (g N/m^2) */
-   double livestemn_xfer[MAX_PFT+1];        /* live stem N transfer (g N/m^2) */
-   double deadstemn[MAX_PFT+1];             /* dead stem N (g N/m^2) */
-   double deadstemn_storage[MAX_PFT+1];     /* dead stem N storage (g N/m^2) */
-   double deadstemn_xfer[MAX_PFT+1];        /* dead stem N transfer (g N/m^2) */
-   double livecrootn[MAX_PFT+1];            /* live coarse root N (g N/m^2) */
-   double livecrootn_storage[MAX_PFT+1];    /* live coarse root N storage (g N/m^2) */
-   double livecrootn_xfer[MAX_PFT+1];       /* live coarse root N transfer (g N/m^2) */
-   double deadcrootn[MAX_PFT+1];            /* dead coarse root N (g N/m^2) */
-   double deadcrootn_storage[MAX_PFT+1];    /* dead coarse root N storage (g N/m^2) */
-   double deadcrootn_xfer[MAX_PFT+1];       /* dead coarse root N transfer (g N/m^2) */
-   double retransn[MAX_PFT+1];              /* retranslocated N (g N/m^2) */
-
-   double npool[MAX_PFT+1];                 /* temporary photosynthate N pool (g N/m^2) */
-   double pft_ntrunc[MAX_PFT+1];            /* PFT-level sink for N truncation (g N/m^2) */
-   /* column (band) physical state */
-   double decl;                      /* solar declination angle (radians) */
-   double fpi;                       /* fraction of potential immobilization */
-   double fpg;                       /* fraction of potential GPP */
-   double annsum_counter;            /* seconds since last ann accumulation turnover */
-   double cannsum_npp;               /* annual sum of NPP, averaged from PFT-level (g C/m^2/yr) */
-   double cannavg_t2m;               /* annual avg. of 2-m air temperature, averaged from PFT-level (K) */
-   double watfc[MAX_NODES];          /* volumetric soil water at field capacity */
-   double me;                        /* moisture of extinction */
-   double fire_prob;                 /* daily fire probability */
-   double mean_fire_prob;            /* e-folding mean of daily fire prob. */
-   double fireseasonl;               /* annual fire season length (days) */
-   double farea_burned;              /* timestep fractional area burned */
-   double ann_farea_burned;          /* annual total fract. area burned */
-   double hr;                    /* heterotrophic respiration (g C/m^2/s) */
-   double lithr;                 /* litter heterotrophic resp. (g C/m^2/s) */
-   double nee;                   /* net ecosystem exchange (g C/m^2/s) */
-   double nep;                   /* net ecosystem production (g C/m^2/s) */
-   /* column (band) carbon state */
-   double cwdc;                      /* coarse woody debris C (g C/m^2) */
-   double litr1c;                    /* litter labile C (g C/m^2) */
-   double litr2c;                    /* litter cellulose C (g C/m^2) */
-   double litr3c;                    /* litter lignin C (g C/m^2) */
-   double soil1c;                    /* fastest soil organic matter C */
-   double soil2c;                    /* medium soil organic matter C */
-   double soil3c;                    /* slow soil organic matter C */
-   double soil4c;                    /* slowest soil organic matter C */
-   double seedc;                     /* column-lev pool for seeding new PFTs */
-   double col_ctrunc;                /* column-lev sink for C truncation */
-   double totlitc;                   /* total litter C (g C/m^2) */
-   double totsomc;                   /* total soil organic C (g C/m^2) */
-   double totcolc;                   /* total column C (g C/m^2) */
-   double prod10c;                   /* wood product C pool, 10-yr lifespan (g C/m^2) */
-   double prod100c;                  /* wood product C pool, 100-yr lifespan (g C/m^2) */
-   /* column (band) nitrogen state */
-   double cwdn;                      /* coarse woody debris N (g N/m^2) */
-   double litr1n;                    /* litter labile N (g N/m^2) */
-   double litr2n;                    /* litter cellulose N (g N/m^2) */
-   double litr3n;                    /* litter lignin N (g N/m^2) */
-   double soil1n;                    /* fastest soil organic matter N */
-   double soil2n;                    /* medium soil organic matter N */
-   double soil3n;                    /* slow soil organic matter N */
-   double soil4n;                    /* slowest soil organic matter N */
-   double sminn;                     /* soil mineral N (g N/m^2) */
-   double seedn;                     /* column-lev pool for seeding new PFTs */
-   double col_ntrunc;                /* column-lev sink for N truncation */
-   double totcoln;                   /* total column N (g N/m^2) */
-   double prod10n;                   /* wood product N pool, 10-yr lifespan (g N/m^2) */
-   double prod100n;                   /* wood product N pool, 100-yr lifespan (g N/m^2) */
-} cn_data_struct;
-
 /******************************************************************************
  * @brief   This structure stores the lake/wetland parameters for a grid cell
  *****************************************************************************/
@@ -1703,5 +1513,42 @@ typedef struct {
     snow_data_struct **snow;      /**< Stores snow variables */
     veg_var_struct **veg_var;     /**< Stores vegetation variables */
 } all_vars_struct;
+
+/******************************************************************************
+ * @brief   This structure stores moisture state information for differencing
+ *          with next time step.
+ *****************************************************************************/
+typedef struct {
+    double total_soil_moist;      /**< total column soil moisture [mm] */
+    double surfstor;              /**< surface water storage [mm] */
+    double swe;                   /**< snow water equivalent [mm] */
+    double wdew;                  /**< canopy interception [mm] */
+} save_data_struct;
+
+/******************************************************************************
+ * @brief   This structure stores output information for one variable.
+ *****************************************************************************/
+typedef struct {
+    char varname[20];        /**< name of variable */
+    bool write;              /**< FALSE = don't write; TRUE = write */
+    char format[10];         /**< format, when written to an ascii file;
+                                should match the desired fprintf format specifier, e.g. %.4f */
+    unsigned short int type;  /**< type, when written to a binary file;
+                                 OUT_TYPE_USunsigned short  = unsigned short int
+                                 OUT_TYPE_SINT   = short int
+                                 OUT_TYPE_FLOAT  = single precision floating point
+                                 OUT_TYPE_DOUBLE = double precision floating point */
+    double mult;             /**< multiplier, when written to a binary file */
+    unsigned short int aggtype;  /**< type of aggregation to use;
+                                    AGG_TYPE_AVG    = take average value over agg interval
+                                    AGG_TYPE_BEG    = take value at beginning of agg interval
+                                    AGG_TYPE_END    = take value at end of agg interval
+                                    AGG_TYPE_MAX    = take maximum value over agg interval
+                                    AGG_TYPE_MIN    = take minimum value over agg interval
+                                    AGG_TYPE_SUM    = take sum over agg interval */
+    unsigned int nelem;          /**< number of data values */
+    double *data;            /**< array of data values */
+    double *aggdata;         /**< array of aggregated data values */
+} out_data_struct;
 
 #endif

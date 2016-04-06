@@ -26,12 +26,15 @@
 
 #include <vic_def.h>
 #include <vic_run.h>
+#include <vic_driver_image.h>
 #include <synveg_cn.h>
 
 // run vegetation
 
 void synveg_run(void)
 {
+  extern option_struct       options;
+  extern size_t              NR;
   extern size_t              current;
   extern all_vars_struct    *all_vars;
   extern atmos_data_struct  *atmos;
@@ -46,21 +49,38 @@ void synveg_run(void)
   extern veg_lib_struct    **veg_lib;
   extern int                *Nveg;
   extern int                *Npfts;
-  extern cn_lib_struct     **cn;
+  extern cn_data_struct     **cn;
 
   size_t                     i, iveg, band;
   int                        lbc, ubc, lbp, ubp;
 
   for (i = 0; i < local_domain.ncells; i++) {
-    VICCNInterface(current, i, Nveg[i], Npft[i], lbc, ubc, lbp, ubp, dmy, \
+
+    /* Convert LAI from global to local */
+    if (current >= 0) {
+        for (iveg = 0; iveg < Nveg[i]; iveg++) {
+            for (band = 0; band < options.SNOW_BAND; band++) {
+	      all_vars[i].veg_var[iveg][band].LAI = veg_hist[i][iveg].LAI[NR];
+                all_vars[i].veg_var[iveg][band].LAI /= \
+		  all_vars[i].veg_var[iveg][band].vegcover;
+            }
+        }
+    }
+
+    if(options.CARBON_MODEL == CN_NORMAL || options.CARBON_MODEL == CN_ADECOMP)
+      {
+	VICCNInterface(current, i, Nveg[i], Npfts[i], lbc, ubc, lbp, ubp, dmy, \
 		   &global_param, &(atmos[i]), &(all_vars[i]), \
 		   &(soil_con[i]), veg_con[i], veg_lib[i], &(cn[i]));
+      }
 
     /* Convert LAI back to global */
     if (current >= 0) {
         for (iveg = 0; iveg < Nveg[i]; iveg++) {
             for (band = 0; band < options.SNOW_BAND; band++) {
-                veg_var[iveg][band].LAI *= veg_var[iveg][band].vegcover;
+	      veg_hist[i][iveg].LAI[NR] = all_vars[i].veg_var[iveg][band].LAI;
+                veg_hist[i][iveg].LAI[NR] *= \
+		  all_vars[i].veg_var[iveg][band].vegcover;
             }
         }
     }

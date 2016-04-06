@@ -217,7 +217,7 @@
    double prod100n;                   /* wood product N pool, 100-yr lifespan (g N/m^2) */
 } cn_data_struct;
 
-void alloc_cn(int, int, cn_data_struct **);
+cn_data_struct *alloc_cn(int, int);
 void cov2pft(double, int, double, double []);
 void get_CNatmos(double, atmos_data_struct *, cn_data_struct *);
 void get_CNsoil(int, int, int, soil_con_struct *, all_vars_struct *, cn_data_struct *);

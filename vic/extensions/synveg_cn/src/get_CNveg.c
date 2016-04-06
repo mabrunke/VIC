@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <vic_def.h>
 #include <vic_run.h>
-#include <string.h>
+#include <synveg_cn.h>
 
 void get_CNveg(int Nbands, int Nveg, double precip,
 	       veg_con_struct   *veg_con,

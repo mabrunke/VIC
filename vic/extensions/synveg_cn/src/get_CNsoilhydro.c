@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <vic_def.h>
 #include <vic_run.h>
-#include <string.h>
+#include <synveg_cn.h>
 
 void get_CNsoilhydro(int Nbands, int Nnodes, int Nlayers, int Nveg, int Npft,
 		     soil_con_struct  *soil_con,

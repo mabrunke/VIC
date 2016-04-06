@@ -46,7 +46,6 @@ vic_start(void)
     extern domain_struct       local_domain;
     extern global_param_struct global_param;
     extern MPI_Datatype        mpi_global_struct_type;
-    extern MPI_Datatype        mpi_filenames_struct_type;
     extern MPI_Datatype        mpi_location_struct_type;
     extern MPI_Datatype        mpi_option_struct_type;
     extern MPI_Datatype        mpi_param_struct_type;
@@ -67,12 +66,6 @@ vic_start(void)
         // read global settings
         filep.globalparam = open_file(filenames.global, "r");
         get_global_param(filep.globalparam);
-    }
-
-    status = MPI_Bcast(&filenames, 1, mpi_filenames_struct_type,
-                       0, MPI_COMM_WORLD);
-    if (status != MPI_SUCCESS) {
-        log_err("MPI error in vic_start(): %d\n", status);
     }
 
     // Set Log Destination

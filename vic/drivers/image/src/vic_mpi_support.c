@@ -34,7 +34,6 @@ void
 initialize_mpi(void)
 {
     extern MPI_Datatype mpi_global_struct_type;
-    extern MPI_Datatype mpi_filenames_struct_type;
     extern MPI_Datatype mpi_location_struct_type;
     extern MPI_Datatype mpi_nc_file_struct_type;
     extern MPI_Datatype mpi_option_struct_type;
@@ -56,7 +55,6 @@ initialize_mpi(void)
 
     // initialize MPI data structures
     create_MPI_global_struct_type(&mpi_global_struct_type);
-    create_MPI_filenames_struct_type(&mpi_filenames_struct_type);
     create_MPI_location_struct_type(&mpi_location_struct_type);
     create_MPI_nc_file_struct_type(&mpi_nc_file_struct_type);
     create_MPI_option_struct_type(&mpi_option_struct_type);
@@ -264,134 +262,6 @@ create_MPI_global_struct_type(MPI_Datatype *mpi_type)
     status = MPI_Type_commit(mpi_type);
     if (status != MPI_SUCCESS) {
         log_err("MPI error in create_MPI_global_struct_type(): %d\n", status);
-    }
-
-    // cleanup
-    free(blocklengths);
-    free(offsets);
-    free(mpi_types);
-}
-
-/******************************************************************************
- * @brief   Create an MPI_Datatype that represents the filenames_struct
- * @details This allows MPI operations in which the entire filenames_struct
- *          can be treated as an MPI_Datatype. NOTE: This function needs to be
- *          kept in-sync with the global_param_struct data type in vic_def.h.
- *
- * @param mpi_type MPI_Datatype that can be used in MPI operations
- *****************************************************************************/
-void
-create_MPI_filenames_struct_type(MPI_Datatype *mpi_type)
-{
-    int           nitems; // number of elements in struct
-    int           status;
-    int          *blocklengths;
-    size_t        i;
-    MPI_Aint     *offsets;
-    MPI_Datatype *mpi_types;
-
-    // nitems has to equal the number of elements in filenames_struct
-    nitems = 14;
-    blocklengths = (int *) malloc(nitems * sizeof(int));
-    if (blocklengths == NULL) {
-        log_err("Memory allocation error in create_MPI_filenames_struct_type().")
-    }
-
-    offsets = (MPI_Aint *) malloc(nitems * sizeof(MPI_Aint));
-    if (offsets == NULL) {
-        log_err("Memory allocation error in create_MPI_filenames_struct_type().")
-    }
-
-    mpi_types = (MPI_Datatype *) malloc(nitems * sizeof(MPI_Datatype));
-    if (mpi_types == NULL) {
-        log_err("Memory allocation error in create_MPI_filenames_struct_type().")
-    }
-
-    // most of the elements in filenames_struct are character arrays. Use
-    // MAXSTRING as the default block length and reset as needed
-    for (i = 0; i < (size_t) nitems; i++) {
-        blocklengths[i] = MAXSTRING;
-    }
-
-    // reset i
-    i = 0;
-
-    // char forcing[2][MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, forcing);
-    blocklengths[i] *= 2;
-    mpi_types[i++] = MPI_CHAR;
-
-    // char f_path_pfx[2][MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, f_path_pfx);
-    blocklengths[i] *= 2;
-    mpi_types[i++] = MPI_CHAR;
-
-    // char global[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, global);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char domain[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, domain);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char constants[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, constants);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char init_state[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, init_state);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char lakeparam[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, lakeparam);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char result_dir[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, result_dir);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char snowband[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, snowband);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char soil[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, soil);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char statefile[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, statefile);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char veg[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, veg);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char veglib[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, veglib);
-    mpi_types[i++] = MPI_CHAR;
-
-    // char log_path[MAXSTRING];
-    offsets[i] = offsetof(filenames_struct, log_path);
-    mpi_types[i++] = MPI_CHAR;
-
-
-    // make sure that the we have the right number of elements
-    if (i != (size_t) nitems) {
-        log_err("Miscount in create_MPI_filenames_struct_type(): "
-                "%zd not equal to %d\n", i, nitems);
-    }
-
-    status = MPI_Type_create_struct(nitems, blocklengths, offsets, mpi_types,
-                                    mpi_type);
-    if (status != MPI_SUCCESS) {
-        log_err("MPI error in create_MPI_filenames_struct_type(): %d\n",
-                status);
-    }
-
-    status = MPI_Type_commit(mpi_type);
-    if (status != MPI_SUCCESS) {
-        log_err("MPI error in create_MPI_filenames_struct_type(): %d\n",
-                status);
     }
 
     // cleanup
@@ -673,6 +543,7 @@ create_MPI_nc_file_struct_type(MPI_Datatype *mpi_type)
     free(offsets);
     free(mpi_types);
 }
+
 
 /******************************************************************************
  * @brief   Create an MPI_Datatype that represents the option_struct
@@ -2192,41 +2063,41 @@ get_scatter_nc_field_int(char   *nc_name,
 #include <vic_driver_shared.h>
 #include <assert.h>
 
-// size_t              NF, NR;
-// size_t              current;
-size_t *filter_active_cells = NULL;
-size_t *mpi_map_mapping_array = NULL;
-// all_vars_struct    *all_vars = NULL;
-// atmos_data_struct  *atmos = NULL;
-// dmy_struct         *dmy = NULL;
-filenames_struct filenames;
-filep_struct     filep;
-domain_struct    global_domain;
-domain_struct    local_domain;
-// global_param_struct global_param;
-// lake_con_struct     lake_con;
-MPI_Datatype     mpi_global_struct_type;
-MPI_Datatype     mpi_location_struct_type;
-MPI_Datatype     mpi_nc_file_struct_type;
-MPI_Datatype     mpi_option_struct_type;
-MPI_Datatype     mpi_param_struct_type;
-int             *mpi_map_local_array_sizes = NULL;
-int             *mpi_map_global_array_offsets = NULL;
-int              mpi_rank;
-int              mpi_size;
-// nc_file_struct      nc_hist_file;
-// nc_var_struct       nc_vars[N_OUTVAR_TYPES];
-// option_struct       options;
-// parameters_struct   param;
-// out_data_struct   **out_data;
-// save_data_struct   *save_data;
-// param_set_struct    param_set;
-// soil_con_struct    *soil_con = NULL;
-// veg_con_map_struct *veg_con_map = NULL;
-// veg_con_struct    **veg_con = NULL;
-// veg_hist_struct   **veg_hist = NULL;
-// veg_lib_struct    **veg_lib = NULL;
-FILE *LOG_DEST;
+//size_t              NF, NR;
+//size_t              current;
+size_t             *filter_active_cells = NULL;
+size_t             *mpi_map_mapping_array = NULL;
+//all_vars_struct    *all_vars = NULL;
+//atmos_data_struct  *atmos = NULL;
+//dmy_struct         *dmy = NULL;
+filenames_struct    filenames;
+filep_struct        filep;
+domain_struct       global_domain;
+domain_struct       local_domain;
+//global_param_struct global_param;
+//lake_con_struct     lake_con;
+MPI_Datatype        mpi_global_struct_type;
+MPI_Datatype        mpi_location_struct_type;
+MPI_Datatype        mpi_nc_file_struct_type;
+MPI_Datatype        mpi_option_struct_type;
+MPI_Datatype        mpi_param_struct_type;
+int                *mpi_map_local_array_sizes = NULL;
+int                *mpi_map_global_array_offsets = NULL;
+int                 mpi_rank;
+int                 mpi_size;
+//nc_file_struct      nc_hist_file;
+//nc_var_struct       nc_vars[N_OUTVAR_TYPES];
+//option_struct       options;
+//parameters_struct   param;
+//out_data_struct   **out_data;
+//save_data_struct   *save_data;
+//param_set_struct    param_set;
+//soil_con_struct    *soil_con = NULL;
+//veg_con_map_struct *veg_con_map = NULL;
+//veg_con_struct    **veg_con = NULL;
+//veg_hist_struct   **veg_hist = NULL;
+//veg_lib_struct    **veg_lib = NULL;
+FILE            *LOG_DEST;
 
 /******************************************************************************
  * @brief   Test routine for VIC MPI support functions
@@ -2242,6 +2113,7 @@ int
 main(int    argc,
      char **argv)
 {
+
     int                 status;
     global_param_struct global;
     location_struct     location;
@@ -2338,13 +2210,13 @@ main(int    argc,
         log_err("MPI error in main(): %d\n", status);
     }
 
-    // assert the values on all processes are the same as the original
+    // assert the values on all processes are the same as the original 
     // assignment
     printf("%d: global.forceskip == %d\n", mpi_rank, global.forceskip[0]);
     assert(global.forceskip[0] == 4321);
     printf("%d: global.forceskip == %d\n", mpi_rank, global.forceskip[1]);
     assert(global.forceskip[1] == 8765);
-    printf("%d: global.time_origin_num == %f\n", mpi_rank,
+    printf("%d: global.time_origin_num == %f\n", mpi_rank, 
            global.time_origin_num);
     assert(global.time_origin_num == -12345.6789);
     printf("%d: location.latitude == %f\n", mpi_rank, location.latitude);

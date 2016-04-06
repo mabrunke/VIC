@@ -310,13 +310,8 @@ main(int   argc,
                     /**************************************************
                        Compute cell physics for 1 timestep
                     **************************************************/
-<<<<<<< HEAD
 		  ErrorFlag = vic_run(rec, 1, &atmos[rec], &all_vars,
 				      dmy, &global_param, &lake_con,
-=======
-                    ErrorFlag = vic_run(&atmos[rec], &all_vars,
-                                        &(dmy[rec]), &global_param, &lake_con,
->>>>>>> upstream/driver/cesm
                                         &soil_con, veg_con, veg_lib,
 				      veg_hist[rec], npfts[0], lbc, ubc, lbp, \
 				      ubp, cn);

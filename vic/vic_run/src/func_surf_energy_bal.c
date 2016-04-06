@@ -47,9 +47,13 @@ func_surf_energy_bal(double  Ts,
 
     /* general model terms */
     size_t             i;
+    int                rec;
     int                VEG;
     int                veg_class;
     int                Error;
+
+    // error counting variables for IMPLICIT option
+    static int         error_cnt0, error_cnt1;
 
     double             delta_t;
 
@@ -216,6 +220,7 @@ func_surf_energy_bal(double  Ts,
     ************************************/
 
     /* general model terms */
+    rec = (int) va_arg(ap, int);
     VEG = (int) va_arg(ap, int);
     veg_class = (int) va_arg(ap, int);
     delta_t = (double) va_arg(ap, double);
@@ -359,6 +364,10 @@ func_surf_energy_bal(double  Ts,
     ***************/
 
     Error = 0;
+    if (rec == 0) {
+        error_cnt0 = 0;
+        error_cnt1 = 0;
+    }
 
     TMean = Ts;
 
@@ -443,6 +452,13 @@ func_surf_energy_bal(double  Ts,
                                              quartz, bulk_density,
                                              soil_density, organic, depth);
 
+            /* print out error information for IMPLICIT solution */
+            if (Error == 0) {
+                error_cnt0++;
+            }
+            else {
+                error_cnt1++;
+            }
             if (FIRST_SOLN[1]) {
                 FIRST_SOLN[1] = false;
             }

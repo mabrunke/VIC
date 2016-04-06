@@ -179,4 +179,9 @@ void soil_moisture_from_water_table(soil_con_struct *soil_con, size_t nlayers);
 int valid_date(unsigned short int calendar, dmy_struct *dmy);
 void validate_parameters(void);
 
+extern void clm_initialize2_(double *, int *, int *, int *, int *, int *, \
+			     int *, int *, int [], int [], double [], \
+			     int []);
+extern void init_clmpftwt_(int *, int *, int *, int *, int *, double *);
+
 #endif

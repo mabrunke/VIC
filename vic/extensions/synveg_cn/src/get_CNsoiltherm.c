@@ -1,8 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <vic_def.h>
 #include <vic_run.h>
-#include <string.h>
+#include <synveg_cn.h>
 
 void get_CNsoiltherm(int Nbands, int Nnodes, int Nveg,
 		     all_vars_struct  *all_vars,

@@ -26,6 +26,7 @@
 
 #include <vic_def.h>
 #include <vic_run.h>
+#include <vic_driver_image.h>
 #include <synveg_cn.h>
 
 // clean up vegetation
@@ -36,8 +37,8 @@ void synveg_finalize(void)
 
     size_t                     i;
 
-    for(i = 0; i < local_domain.ncells; i++) {
+    /*    for(i = 0; i < local_domain.ncells; i++) {
       free(cn[i]);
-    }
+      } */
 
 }
